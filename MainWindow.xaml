@@ -1,0 +1,60 @@
+﻿<Window x:Class="VisualReplayDebugger.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VisualReplayDebugger"
+        mc:Ignorable="d"
+        Title="Visual Replay Debugger" Height="1000" Width="1800">
+    <DockPanel Name="MainDockPanel">
+        <Menu DockPanel.Dock="Top" Name="MainMenu"/>
+        <DockPanel DockPanel.Dock="Top" Name="TimeControlsPanel"/>
+        <ToolBarTray Visibility="Collapsed" DockPanel.Dock="Top" Name="MainToolbarTray"/>
+        <StackPanel DockPanel.Dock="Bottom" Name="TimeScrubPanel"/>
+        <DockingManager x:Name="DockManager"
+                DockPanel.Dock="Top"
+                AllowMixedOrientation="True"
+                AutoWindowSizeWhenOpened="True"
+                IsVirtualizingAnchorable="True"
+                IsVirtualizingDocument="True">
+            <DockingManager.Theme>
+                <!--<Vs2013LightTheme />-->
+                <!--<Vs2013DarkTheme />-->
+                <!--<MetroTheme />-->
+                <Vs2013BlueTheme />
+            </DockingManager.Theme>
+            <DockingManager.DocumentHeaderTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Margin="0,0,4,0" Source="{Binding IconSource}" />
+                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </DockingManager.DocumentHeaderTemplate>
+            <LayoutRoot>
+                <LayoutPanel Orientation="Vertical">
+                    <LayoutAnchorablePaneGroup>
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable Title="Entity Timelines" x:Name="TimelinesToolWindow"/>
+                        </LayoutAnchorablePane>
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable Title="Graphs" x:Name="GraphsWindow"/>
+                        </LayoutAnchorablePane>
+                    </LayoutAnchorablePaneGroup>
+                    <LayoutAnchorablePaneGroup>
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable Title="Logs" x:Name="LogsWindow"/>                            
+                        </LayoutAnchorablePane>
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable Title="Viewport" x:Name="ViewportWindow"/>
+                        </LayoutAnchorablePane>
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable Title="Properties" x:Name="PropertiesWindow"/>
+                            <LayoutAnchorable Title="Draws" x:Name="DrawsLogsWindow"/>
+                        </LayoutAnchorablePane>
+                    </LayoutAnchorablePaneGroup>
+                </LayoutPanel>
+            </LayoutRoot>
+        </DockingManager>
+    </DockPanel>
+</Window>
