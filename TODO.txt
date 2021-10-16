@@ -1,0 +1,29 @@
+﻿
+TODO:
+
+- Documentation
+- Demo (Youtube)
+
+- handle full transforms
+- add header to serialization
+- auto-detect compression
+- serialization versionning
+- don't hold left+right keys in the viewport
+
+- improve filters drop-down widgets
+
+- Draw arrow
+- Draw direction(screen space)
+- Draw box
+- Draw circle(normal+radius)
+- Draw pie(dir+normal+radius+angle)
+
+- Layout save/restore/
+- Duration for primitive draws
+- Dynamic low-rez for graphs based on rendering times
+
+- Search for graphs
+- Tooltips for search bars
+- Dark theme
+- Alternate layouts
+- import video + sync offset
