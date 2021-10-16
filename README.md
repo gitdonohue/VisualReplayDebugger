@@ -1,5 +1,9 @@
 # VisualReplayDebugger
-Visual game replay debugging tool
+Visual game replay debugging tool.
+
+Inspired by physics replay debugging toos like the PhysX and Havok Visual Debuggers, as well as the Unreal Visual Logger.
+The tool is engine agnostic, the user must explicitly define what gets serialized.
+The main use-case is for debugging gameplay and AI.
 
 ![image](https://user-images.githubusercontent.com/44268295/137595268-1eddf06a-293e-4743-9abc-3efb9a5ccc33.png)
 
@@ -21,3 +25,5 @@ void DrawLine(object obj, string category, float duration, Point p1, Point p2, C
 void DrawCircle(object obj, string category, float duration, Point position, Point up, float radius, Color color);
 void StepFrame(float totalTime);
 ```
+
+The replay serialization format is structured in a way that the file stream does not need to be closed in order for the file to be valid.
