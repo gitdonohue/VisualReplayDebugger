@@ -7,6 +7,8 @@ The main use-case is for debugging gameplay and AI.
 
 ![image](https://user-images.githubusercontent.com/44268295/137595268-1eddf06a-293e-4743-9abc-3efb9a5ccc33.png)
 
+The tool can be installed via: https://www.microsoft.com/store/apps/9NT19LVXQS0F
+
 Replay session serialization is contained in a single file (ReplayCapture.cs), which exposes the following operations:
 
 ``` C#
@@ -27,3 +29,5 @@ void StepFrame(float totalTime);
 ```
 
 The replay serialization format is structured in a way that the file stream does not need to be closed in order for the file to be valid.
+
+This is a work in progress.
