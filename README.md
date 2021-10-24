@@ -39,3 +39,5 @@ void StepFrame(float totalTime);
 The replay serialization format is structured in a way that the file stream does not need to be closed in order for the file to be valid.
 
 This is a work in progress.
+
+[User guide](USERGUIDE.md)
