@@ -34,12 +34,12 @@ namespace ReplayCapture
         void SetLog(object obj, string category, string log, Color color);
         void SetDynamicParam(object obj, string key, string val);
         void SetDynamicParam(object obj, string key, float val);
-        void DrawSphere(object obj, string category, float duration, Point pos, float radius, Color color);
-        void DrawBox(object obj, string category, float duration, Transform xform, Point dimensions, Color color);
-        void DrawCapsule(object obj, string category, float duration, Point p1, Point p2, float radius, Color color);
-        void DrawMesh(object obj, string category, float duration, Point[] verts, Color color);
-        void DrawLine(object obj, string category, float duration, Point p1, Point p2, Color color);
-        void DrawCircle(object obj, string category, float duration, Point position, Point up, float radius, Color color);
+        void DrawSphere(object obj, string category, Point pos, float radius, Color color);
+        void DrawBox(object obj, string category, Transform xform, Point dimensions, Color color);
+        void DrawCapsule(object obj, string category, Point p1, Point p2, float radius, Color color);
+        void DrawMesh(object obj, string category, Point[] verts, Color color);
+        void DrawLine(object obj, string category, Point p1, Point p2, Color color);
+        void DrawCircle(object obj, string category, Point position, Point up, float radius, Color color);
 
         void StepFrame(float totalTime);
     }
@@ -100,12 +100,12 @@ namespace ReplayCapture
         public void SetLog(object obj, string category, string log, Color color) => SetLog(GetEntity(obj), category, log, color);
         public void SetDynamicParam(object obj, string key, string val) => SetDynamicParam(GetEntity(obj), key, val);
         public void SetDynamicParam(object obj, string key, float val) => SetDynamicParam(GetEntity(obj), key, val);
-        public void DrawSphere(object obj, string category, float duration, Point pos, float radius, Color color) => DrawSphere(GetEntity(obj), category, duration, pos, radius, color);
-        public void DrawBox(object obj, string category, float duration, Transform xform, Point dimensions, Color color) => DrawBox(GetEntity(obj), category, duration, xform, dimensions, color);
-        public void DrawCapsule(object obj, string category, float duration, Point p1, Point p2, float radius, Color color) => DrawCapsule(GetEntity(obj), category, duration, p1, p2, radius, color);
-        public void DrawMesh(object obj, string category, float duration, Point[] verts, Color color) => DrawMesh(GetEntity(obj), category, duration, verts, color);
-        public void DrawLine(object obj, string category, float duration, Point p1, Point p2, Color color) => DrawLine(GetEntity(obj), category, duration, p1, p2, color);
-        public void DrawCircle(object obj, string category, float duration, Point position, Point up, float radius, Color color) => DrawCircle(GetEntity(obj), category, duration, position, up, radius, color);
+        public void DrawSphere(object obj, string category, Point pos, float radius, Color color) => DrawSphere(GetEntity(obj), category, pos, radius, color);
+        public void DrawBox(object obj, string category, Transform xform, Point dimensions, Color color) => DrawBox(GetEntity(obj), category, xform, dimensions, color);
+        public void DrawCapsule(object obj, string category, Point p1, Point p2, float radius, Color color) => DrawCapsule(GetEntity(obj), category, p1, p2, radius, color);
+        public void DrawMesh(object obj, string category, Point[] verts, Color color) => DrawMesh(GetEntity(obj), category, verts, color);
+        public void DrawLine(object obj, string category, Point p1, Point p2, Color color) => DrawLine(GetEntity(obj), category, p1, p2, color);
+        public void DrawCircle(object obj, string category, Point position, Point up, float radius, Color color) => DrawCircle(GetEntity(obj), category, position, up, radius, color);
 
         #region private
 
@@ -164,24 +164,30 @@ namespace ReplayCapture
 
         private void SetLog(Entity entity, string category, string log, Color color) => Writer?.WriteEntityLog(entity, FrameCounter, category, log ?? string.Empty, color);
         private void SetDynamicParam(Entity entity, string key, string val) => Writer?.WriteEntityParameter(entity, FrameCounter, key, val ?? string.Empty);
-        private void DrawSphere(Entity entity, string category, float duration, Point pos, float radius, Color color) => Writer?.WriteEntitySphere(entity, FrameCounter, duration, category, pos, radius, color);
-        private void DrawBox(Entity entity, string category, float duration, Transform xform, Point dimensions, Color color) => Writer?.WriteEntityBox(entity, FrameCounter, duration, category, xform, dimensions, color);
-        private void DrawCapsule(Entity entity, string category, float duration, Point p1, Point p2, float radius, Color color) => Writer?.WriteEntityCapsule(entity, FrameCounter, duration, category, p1, p2, radius, color);
-        private void DrawMesh(Entity entity, string category, float duration, Point[] verts, Color color) => Writer?.WriteEntityMesh(entity, FrameCounter, duration, category, verts, color);
-        private void DrawLine(Entity entity, string category, float duration, Point p1, Point p2, Color color) => Writer?.WriteEntityLine(entity, FrameCounter, duration, category, p1, p2, color);
-        private void DrawCircle(Entity entity, string category, float duration, Point position, Point up, float radius, Color color) => Writer?.WriteEntityCircle(entity, FrameCounter, duration, category, position, up, radius, color);
+        private void DrawSphere(Entity entity, string category, Point pos, float radius, Color color) => Writer?.WriteEntitySphere(entity, FrameCounter, category, pos, radius, color);
+        private void DrawBox(Entity entity, string category, Transform xform, Point dimensions, Color color) => Writer?.WriteEntityBox(entity, FrameCounter, category, xform, dimensions, color);
+        private void DrawCapsule(Entity entity, string category, Point p1, Point p2, float radius, Color color) => Writer?.WriteEntityCapsule(entity, FrameCounter, category, p1, p2, radius, color);
+        private void DrawMesh(Entity entity, string category, Point[] verts, Color color)
+        {
+            if (!string.IsNullOrEmpty(category)) throw new NotImplementedException("Mesh draws are only supported at entity creation (category empty)");
+            Writer?.WriteEntityMesh(entity, FrameCounter, category, verts, color);
+        }
+        private void DrawLine(Entity entity, string category, Point p1, Point p2, Color color) => Writer?.WriteEntityLine(entity, FrameCounter, category, p1, p2, color);
+        private void DrawCircle(Entity entity, string category, Point position, Point up, float radius, Color color) => Writer?.WriteEntityCircle(entity, FrameCounter, category, position, up, radius, color);
 
         #endregion //private
     }
 
     internal class BinaryReplayWriter
     {
+        public static System.Text.Encoding StringEncoding => System.Text.Encoding.ASCII;
+
         BinaryWriter _writer;
 
         public BinaryReplayWriter(Stream stream)
         {
             stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionLevel.Fastest);
-            _writer = new BinaryWriter(stream);
+            _writer = new BinaryWriter(stream, StringEncoding);
         }
 
         public void Dispose()
@@ -192,16 +198,16 @@ namespace ReplayCapture
 
         public void WriteFrameStep(int frame, float totalTime)
         {
-            _writer?.Write((int)BlockType.FrameStep);
+            _writer?.Write7BitEncodedInt((int)BlockType.FrameStep);
             //_writer?.Write(frame);
             _writer?.Write(totalTime);
         }
 
         private void WriteEntityHeader(BlockType blockType, Entity entity, int frame)
         {
-            _writer?.Write((int)blockType);
-            _writer?.Write(frame);
-            _writer?.Write(entity?.Id ?? 0);
+            _writer?.Write7BitEncodedInt((int)blockType);
+            _writer?.Write7BitEncodedInt(frame);
+            _writer?.Write7BitEncodedInt(entity?.Id ?? 0);
         }
 
         public void WriteEntityDef(Entity entity, int frame)
@@ -232,7 +238,7 @@ namespace ReplayCapture
             WriteEntityHeader(BlockType.EntityLog, entity, frame);
             _writer?.Write(category);
             _writer?.Write(message);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
         public void WriteEntityParameter(Entity entity, int frame, string label, string value)
@@ -249,69 +255,63 @@ namespace ReplayCapture
             _writer?.Write(value);
         }
 
-        public void WriteEntityLine(Entity entity, int frame, float duration, string category, Point start, Point end, Color color)
+        public void WriteEntityLine(Entity entity, int frame, string category, Point start, Point end, Color color)
         {
             WriteEntityHeader(BlockType.EntityLine, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(start);
             _writer?.Write(end);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
-        public void WriteEntityCircle(Entity entity, int frame, float duration, string category, Point position, Point up, float radius, Color color)
+        public void WriteEntityCircle(Entity entity, int frame, string category, Point position, Point up, float radius, Color color)
         {
             WriteEntityHeader(BlockType.EntityCircle, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(position);
             _writer?.Write(up);
             _writer?.Write(radius);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
-        public void WriteEntitySphere(Entity entity, int frame, float duration, string category, Point center, float radius, Color color)
+        public void WriteEntitySphere(Entity entity, int frame, string category, Point center, float radius, Color color)
         {
             WriteEntityHeader(BlockType.EntitySphere, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(center);
             _writer?.Write(radius);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
-        public void WriteEntityCapsule(Entity entity, int frame, float duration, string category, Point p1, Point p2, float radius, Color color)
+        public void WriteEntityCapsule(Entity entity, int frame, string category, Point p1, Point p2, float radius, Color color)
         {
             WriteEntityHeader(BlockType.EntityCapsule, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(p1);
             _writer?.Write(p2);
             _writer?.Write(radius);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
-        public void WriteEntityMesh(Entity entity, int frame, float duration, string category, Point[] verts, Color color)
+        public void WriteEntityMesh(Entity entity, int frame, string category, Point[] verts, Color color)
         {
             WriteEntityHeader(BlockType.EntityMesh, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(verts.Length);
             foreach (var vert in verts)
             {
                 _writer?.Write(vert);
             }
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
 
-        public void WriteEntityBox(Entity entity, int frame, float duration, string category, Transform xform, Point dimensions, Color color)
+        public void WriteEntityBox(Entity entity, int frame, string category, Transform xform, Point dimensions, Color color)
         {
             WriteEntityHeader(BlockType.EntityMesh, entity, frame);
-            _writer?.Write(duration);
             _writer?.Write(category);
             _writer?.Write(xform);
             _writer?.Write(dimensions);
-            _writer?.Write((int)color);
+            _writer?.Write(color);
         }
     }
 
@@ -331,7 +331,9 @@ namespace ReplayCapture
         EntitySphere,
         EntityCapsule,
         EntityMesh,
-        EntityBox
+        EntityBox,
+
+        ReplayHeader = 0xFF
     }
 
     public class Entity
@@ -350,27 +352,27 @@ namespace ReplayCapture
     {
         public static void Write(this BinaryWriter w, Entity entity)
         {
-            w.Write(entity.Id);
+            w.Write7BitEncodedInt(entity.Id);
             w.Write(entity.Name);
             w.Write(entity.Path);
             w.Write(entity.TypeName);
             w.Write(entity.CategoryName);
             w.Write(entity.InitialTransform);
             w.Write(entity.StaticParameters);
-            w.Write(entity.CreationFrame);
+            w.Write7BitEncodedInt(entity.CreationFrame);
         }
 
         public static void Read(this BinaryReader r, out Entity entity)
         {
             entity = new Entity();
-            entity.Id = r.ReadInt32();
+            entity.Id = r.Read7BitEncodedInt();
             entity.Name = r.ReadString();
             entity.Path = r.ReadString();
             entity.TypeName = r.ReadString();
             entity.CategoryName = r.ReadString();
             r.Read(out entity.InitialTransform);
             r.Read(out entity.StaticParameters);
-            entity.CreationFrame = r.ReadInt32();
+            entity.CreationFrame = r.Read7BitEncodedInt();
         }
 
         public static void Write(this BinaryWriter w, Point point)
@@ -424,7 +426,7 @@ namespace ReplayCapture
 
         public static void Write(this BinaryWriter w, Dictionary<string, string> stringDict)
         {
-            w.Write(stringDict.Count);
+            w.Write7BitEncodedInt(stringDict.Count);
             foreach (var item in stringDict)
             {
                 w.Write(item.Key);
@@ -435,11 +437,21 @@ namespace ReplayCapture
         public static void Read(this BinaryReader r, out Dictionary<string, string> stringDict)
         {
             stringDict = new Dictionary<string, string>();
-            int count = r.ReadInt32();
+            int count = r.Read7BitEncodedInt();
             while (count-- > 0)
             {
                 stringDict.Add(r.ReadString(), r.ReadString());
             }
+        }
+
+        public static void Write(this BinaryWriter w, Color color)
+        {
+            w.Write7BitEncodedInt((int)color);
+        }
+
+        public static void Read(this BinaryReader r, out Color color)
+        {
+            color = (Color)r.Read7BitEncodedInt();
         }
     }
 }

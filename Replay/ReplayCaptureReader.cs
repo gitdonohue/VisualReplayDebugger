@@ -223,7 +223,6 @@ namespace ReplayCapture
             public Point[] verts;
             public double scale;
             public int frame;
-            public double duration;
 
             public Point Pos => xform.Translation;
             public Point EndPoint => p2;
@@ -244,8 +243,23 @@ namespace ReplayCapture
             if (File.Exists(filePath))
             {
                 Stream stream = File.OpenRead(filePath);
-                stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
-                LoadCapture(new BinaryReader(stream));
+                
+                // Auto-detect compression
+                int header = (new BinaryReader(stream)).ReadInt32();
+                stream.Seek(0, SeekOrigin.Begin);
+                if (header == (int)BlockType.ReplayHeader)
+                {
+                    // uncompressed
+                }
+                else
+                {
+                    // Zlib deflate adds a two-byte header, the c# deflate stream does not support this, so we must skip it.
+                    if ( (header&0xFFFF) == 0x0178 ) { stream.Seek(2, SeekOrigin.Begin); }
+                    
+                    // Wrap in a deflate stream
+                    stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
+                }           
+                LoadCapture(new BinaryReader(stream, BinaryReplayWriter.StringEncoding));
             }
         }
 
@@ -256,12 +270,16 @@ namespace ReplayCapture
                 Dictionary<Entity, Transform> last_xforms = new();
                 while(true)
                 {
-                    int blockTypeVal = reader.ReadInt32();
+                    int blockTypeVal = reader.Read7BitEncodedInt();
                     if (blockTypeVal == 0 || !Enum.IsDefined(typeof(BlockType), blockTypeVal)) throw new InvalidOperationException("Invalid block type. Probably not a valid replay file.");
 
                     BlockType blockType = (BlockType)blockTypeVal;
 
-                    if (blockType == BlockType.FrameStep)
+                    if (blockType == BlockType.ReplayHeader)
+                    {
+                        // empty
+                    }
+                    else if (blockType == BlockType.FrameStep)
                     {
                         //int frame = reader.ReadInt32();
                         float totalTime = reader.ReadSingle();
@@ -269,8 +287,8 @@ namespace ReplayCapture
                     }
                     else
                     {
-                        int frame = reader.ReadInt32();
-                        int id = reader.ReadInt32();
+                        int frame = reader.Read7BitEncodedInt();
+                        int id = reader.Read7BitEncodedInt();
                         if (blockType == BlockType.EntityDef)
                         {
                             reader.Read(out Entity entitydef);
@@ -306,7 +324,7 @@ namespace ReplayCapture
                                     string category = reader.ReadString();
                                     string msg = reader.ReadString();
                                     msg = msg.Replace('\n','|'); // newlines stripped
-                                    Color color = (Color)reader.ReadInt32();
+                                    reader.Read(out Color color);
                                     LogEntries.Add(frame, (entity, category, msg, color));
                                 }
                                 break;
@@ -326,65 +344,59 @@ namespace ReplayCapture
                                 break;
                             case BlockType.EntityLine:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     reader.Read(out Point p1);
                                     reader.Read(out Point p2);
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, duration = duration, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCircle:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     reader.Read(out Point center);
                                     reader.Read(out Point up);
                                     float radius = reader.ReadSingle();
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, duration = duration, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
                                 }
                                 break;
                             case BlockType.EntitySphere:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     reader.Read(out Point center);
                                     float radius = reader.ReadSingle();
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, duration = duration, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityBox:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     reader.Read(out Transform xform);
                                     reader.Read(out Point dimensions);
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, duration = duration, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCapsule:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     reader.Read(out Point p1);
                                     reader.Read(out Point p2);
                                     float radius = reader.ReadSingle();
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, duration = duration, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityMesh:
                                 {
-                                    float duration = reader.ReadSingle();
                                     string category = reader.ReadString();
                                     int vertexCount = reader.ReadInt32();
                                     Point[] verts = new Point[vertexCount];
                                     for(int i = 0; i < vertexCount; ++i) { reader.Read(out Point p); verts[i] = p; }
-                                    Color color = (Color)reader.ReadInt32();
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, duration = duration, frame = frame });
+                                    reader.Read(out Color color);
+                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
                                 }
                                 break;
                         }

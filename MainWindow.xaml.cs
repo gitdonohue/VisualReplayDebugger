@@ -108,6 +108,10 @@ namespace VisualReplayDebugger
                 }
             };
 
+            var testExport = new MenuItem() { Header = "_TestSerializer" };
+            fileMenu.Items.Add(testExport);
+            testExport.Click += (o, e) => mainWindow.LoadReplay(SerializeTest.TestReplayFileExport());
+
             var exit = new MenuItem() { Header = "_Exit" };
             fileMenu.Items.Add(exit);
             exit.Click += (o, e) => System.Windows.Application.Current.Shutdown();
