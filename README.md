@@ -19,12 +19,12 @@ void SetTransform(object obj, Transform xform);
 void SetLog(object obj, string category, string log, Color color);
 void SetDynamicParam(object obj, string key, string val);
 void SetDynamicParam(object obj, string key, float val);
-void DrawSphere(object obj, string category, float duration, Point pos, float radius, Color color);
-void DrawBox(object obj, string category, float duration, Transform xform, Point dimensions, Color color);
-void DrawCapsule(object obj, string category, float duration, Point p1, Point p2, float radius, Color color);
-void DrawMesh(object obj, string category, float duration, Point[] verts, Color color);
-void DrawLine(object obj, string category, float duration, Point p1, Point p2, Color color);
-void DrawCircle(object obj, string category, float duration, Point position, Point up, float radius, Color color);
+void DrawSphere(object obj, string category, Point pos, float radius, Color color);
+void DrawBox(object obj, string category, Transform xform, Point dimensions, Color color);
+void DrawCapsule(object obj, string category, Point p1, Point p2, float radius, Color color);
+void DrawMesh(object obj, string category, Point[] verts, Color color);
+void DrawLine(object obj, string category, Point p1, Point p2, Color color);
+void DrawCircle(object obj, string category, Point position, Point up, float radius, Color color);
 void StepFrame(float totalTime);
 ```
 
