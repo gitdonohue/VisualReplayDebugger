@@ -253,9 +253,6 @@ namespace ReplayCapture
                 }
                 else
                 {
-                    // Zlib deflate adds a two-byte header, the c# deflate stream does not support this, so we must skip it.
-                    if ( (header&0xFFFF) == 0x0178 ) { stream.Seek(2, SeekOrigin.Begin); }
-                    
                     // Wrap in a deflate stream
                     stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
                 }           
