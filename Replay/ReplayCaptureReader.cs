@@ -256,11 +256,11 @@ namespace ReplayCapture
                     // Wrap in a deflate stream
                     stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
                 }           
-                LoadCapture(new BinaryReader(stream, BinaryReplayWriter.StringEncoding));
+                LoadCapture(new BinaryReaderEx(stream, BinaryReplayWriter.StringEncoding));
             }
         }
 
-        private void LoadCapture(BinaryReader reader)
+        private void LoadCapture(BinaryReaderEx reader)
         {
             try
             {

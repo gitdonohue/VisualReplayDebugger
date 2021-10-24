@@ -182,12 +182,12 @@ namespace ReplayCapture
     {
         public static System.Text.Encoding StringEncoding => System.Text.Encoding.ASCII;
 
-        BinaryWriter _writer;
+        BinaryWriterEx _writer;
 
         public BinaryReplayWriter(Stream stream)
         {
             stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionLevel.Fastest);
-            _writer = new BinaryWriter(stream, StringEncoding);
+            _writer = new BinaryWriterEx(stream, StringEncoding);
         }
 
         public void Dispose()
@@ -350,7 +350,7 @@ namespace ReplayCapture
 
     internal static class BinaryIOExtensions
     {
-        public static void Write(this BinaryWriter w, Entity entity)
+        public static void Write(this BinaryWriterEx w, Entity entity)
         {
             w.Write7BitEncodedInt(entity.Id);
             w.Write(entity.Name);
@@ -362,7 +362,7 @@ namespace ReplayCapture
             w.Write7BitEncodedInt(entity.CreationFrame);
         }
 
-        public static void Read(this BinaryReader r, out Entity entity)
+        public static void Read(this BinaryReaderEx r, out Entity entity)
         {
             entity = new Entity();
             entity.Id = r.Read7BitEncodedInt();
@@ -424,7 +424,7 @@ namespace ReplayCapture
             xform = new Transform() { Translation = t, Rotation = rot };
         }
 
-        public static void Write(this BinaryWriter w, Dictionary<string, string> stringDict)
+        public static void Write(this BinaryWriterEx w, Dictionary<string, string> stringDict)
         {
             w.Write7BitEncodedInt(stringDict.Count);
             foreach (var item in stringDict)
@@ -434,7 +434,7 @@ namespace ReplayCapture
             }
         }
 
-        public static void Read(this BinaryReader r, out Dictionary<string, string> stringDict)
+        public static void Read(this BinaryReaderEx r, out Dictionary<string, string> stringDict)
         {
             stringDict = new Dictionary<string, string>();
             int count = r.Read7BitEncodedInt();
@@ -444,14 +444,28 @@ namespace ReplayCapture
             }
         }
 
-        public static void Write(this BinaryWriter w, Color color)
+        public static void Write(this BinaryWriterEx w, Color color)
         {
             w.Write7BitEncodedInt((int)color);
         }
 
-        public static void Read(this BinaryReader r, out Color color)
+        public static void Read(this BinaryReaderEx r, out Color color)
         {
             color = (Color)r.Read7BitEncodedInt();
         }
+    }
+
+    // 7BitEncodedInt marked protected in prior versions of .net
+    public class BinaryReaderEx : BinaryReader
+    {
+        public BinaryReaderEx(Stream input, System.Text.Encoding encoding) : base(input, encoding) { }
+        new public int Read7BitEncodedInt() => base.Read7BitEncodedInt();
+    }
+
+    // 7BitEncodedInt marked protected in prior versions of .net
+    public class BinaryWriterEx : BinaryWriter
+    {
+        public BinaryWriterEx(Stream input, System.Text.Encoding encoding) : base(input, encoding) { }
+        new public void Write7BitEncodedInt(int val) => base.Write7BitEncodedInt(val);
     }
 }
