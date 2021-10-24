@@ -9,7 +9,11 @@ The main use-case is for debugging gameplay and AI.
 
 The tool can be installed via: https://www.microsoft.com/store/apps/9NT19LVXQS0F
 
-Replay session serialization is contained in a single file (ReplayCapture.cs), which exposes the following operations:
+[C# serializer](Replay/Serializers/dotnet/ReplayCapture.cs)
+
+[C serializer](Replay/Serializers/c/ReplayCapture.h)
+
+Replay session serialization allows the following operations:
 
 ``` C#
 void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string> staticParameters = null);
