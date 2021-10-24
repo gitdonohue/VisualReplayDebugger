@@ -9,6 +9,8 @@ The main use-case is for debugging gameplay and AI.
 
 The tool can be installed via: https://www.microsoft.com/store/apps/9NT19LVXQS0F
 
+To integrate into your app/game, you can use the following serializers:
+
 [C# serializer](Replay/Serializers/dotnet/ReplayCapture.cs)
 
 [C serializer](Replay/Serializers/c/ReplayCapture.h)
