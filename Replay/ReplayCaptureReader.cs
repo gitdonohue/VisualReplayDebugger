@@ -157,13 +157,48 @@ namespace ReplayCapture
         {
             // TODO: pre-index this
             var dict = new Dictionary<string, string>();
-            var paramsStream = EntityDynamicParams.For(entity);
+            var paramsStream = EntityDynamicParamsCombined.For(entity);
             foreach (var paramsEntry in paramsStream)
             {
                 if (paramsEntry.Item1 > frame) break;
                 dict[paramsEntry.Item2.Item1] = paramsEntry.Item2.Item2;
             }
             return dict;
+        }
+
+        static char[] SplitSeparators = new char[] { '.', '\\', '/' };
+
+        public struct DynamicParamTimeEntry
+        {
+            public string name;
+            public string val;
+            public int frame;
+            public double time;
+            public int depth;
+
+            public IEnumerable<string> SplitValues => string.IsNullOrEmpty(val) ? Enumerable.Empty<string>() : val.Split(SplitSeparators);
+        }
+
+        private void AddToDynamicPropertiesTable(Entity entity, int frame, string param, string val)
+        {
+            EntityDynamicParamsCombined.For(entity)?.Add(frame, (param, val));
+
+            EntityDynamicParamsNames.Add(param);
+
+            if (!EntityDynamicParams.TryGetValue(entity, out var tbl))
+            {
+                tbl = new();
+                EntityDynamicParams[entity] = tbl;
+            }
+            if (!tbl.TryGetValue(param, out var lst))
+            {
+                lst = new();
+                tbl[param] = lst;
+            }
+            if ( lst.Count == 0 || lst.Last().val != val ) // Filter out redundant param sets
+            {
+                lst.Add(new DynamicParamTimeEntry() { name = param, frame = frame, val = val, time = this.GetTimeForFrame(frame), depth = string.IsNullOrEmpty(val) ? 0 : (val.Split(SplitSeparators).Length - 1) });
+            }
         }
 
         public IEnumerable<(string, float)> GetDynamicValuesAt(Entity entity, int frame)
@@ -185,7 +220,9 @@ namespace ReplayCapture
             {
                 yield return ("Name", entity.Name);
                 yield return ("Path", entity.Path);
-                yield return ("Active", $"{GetEntityLifeTime(entity).InRange(frame)}");
+                bool isActive = GetEntityLifeTime(entity).InRange(frame);
+                //yield return ("Active", $"{isActive}");
+                if (!isActive) { yield break; }
                 var pos = GetEntityPosition(entity, frame);
                 yield return ("Position", $"({pos.X},{pos.Y},{pos.Z})");
                 foreach (var sp in entity.StaticParameters) yield return (sp.Key,sp.Value);
@@ -197,6 +234,7 @@ namespace ReplayCapture
 
         public IEnumerable<string> GetEntityCategories() => Entities.Select(x => x.CategoryName).Distinct();
         public IEnumerable<string> GetLogCategories() => LogEntries.Select(x => x.Item2.Item2).Distinct();
+        public IEnumerable<string> GetParameterCategories() => EntityDynamicParamsNames;
         public IEnumerable<Color> GetLogColors() => LogEntries.Select(x => x.Item2.Item4).Distinct();
 
         public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.Item2.IsCreationDraw).Select(x => x.Item2.category).Distinct();
@@ -207,7 +245,9 @@ namespace ReplayCapture
         public Dictionary<Entity, FrameRange> EntityLifeTimes { get; private set; } = new();
         private ForDict<Entity, FrameStampedList<Transform>> EntitySetTransforms { get; set; } = new();
         public FrameStampedList<(Entity, string, string, Color)> LogEntries { get; private set; } = new();
-        public ForDict<Entity, FrameStampedList<(string, string)>> EntityDynamicParams { get; private set; } = new();
+        public ForDict<Entity, FrameStampedList<(string, string)>> EntityDynamicParamsCombined { get; private set; } = new();
+        public HashSet<string> EntityDynamicParamsNames { get; private set; } = new();
+        public Dictionary<Entity, Dictionary<string, List<DynamicParamTimeEntry>>> EntityDynamicParams { get; private set; } = new();
         public ForDict<Entity, FrameStampedList<(string, float)>> EntityDynamicValues { get; private set; } = new();
 
 
@@ -329,7 +369,7 @@ namespace ReplayCapture
                                 {
                                     string label = reader.ReadString();
                                     string val = reader.ReadString();
-                                    EntityDynamicParams.For(entity)?.Add(frame, (label, val));
+                                    AddToDynamicPropertiesTable(entity, frame, label, val);
                                 }
                                 break;
                             case BlockType.EntityValue:

@@ -39,6 +39,7 @@
                         </LayoutAnchorablePane>
                         <LayoutAnchorablePane>
                             <LayoutAnchorable Title="Graphs" x:Name="GraphsWindow"/>
+                            <LayoutAnchorable Title="PropertiesTimelines" x:Name="PropertiesTimelinesWindow"/>
                         </LayoutAnchorablePane>
                     </LayoutAnchorablePaneGroup>
                     <LayoutAnchorablePaneGroup>

@@ -55,6 +55,7 @@ namespace VisualReplayDebugger
 
             TimelinesToolWindow.Content = new EntityTimelinesPanel(this);
             GraphsWindow.Content = new GraphsPanel(this);
+            PropertiesTimelinesWindow.Content = new PropertiesTimelinesPanel(this);
             LogsWindow.Content = new LogsPanel(this);
             DrawsLogsWindow.Content = new DrawLogsPanel(this);
             ViewportWindow.Content = new ViewportPanel(this);
@@ -126,6 +127,10 @@ namespace VisualReplayDebugger
             var showtimelines = new MenuItem() { Header = "_Timelines" };
             showtimelines.Click += (o, e) => mainWindow.ShowOrDuplicatePanel(mainWindow.TimelinesToolWindow);
             viewmenu.Items.Add(showtimelines);
+
+            var showpropertiestimelines = new MenuItem() { Header = "PropertiesTimelines" };
+            showpropertiestimelines.Click += (o, e) => mainWindow.ShowOrDuplicatePanel(mainWindow.PropertiesTimelinesWindow);
+            viewmenu.Items.Add(showpropertiestimelines);
 
             var showlogs = new MenuItem() { Header = "_Logs" };
             showlogs.Click += (o, e) => mainWindow.ShowOrDuplicatePanel(mainWindow.LogsWindow);
