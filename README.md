@@ -5,7 +5,7 @@ Inspired by physics replay debugging toos like the PhysX and Havok Visual Debugg
 The tool is engine agnostic, the user must explicitly define what gets serialized.
 The main use-case is for debugging gameplay and AI.
 
-![image](https://user-images.githubusercontent.com/44268295/137595268-1eddf06a-293e-4743-9abc-3efb9a5ccc33.png)
+![image](https://user-images.githubusercontent.com/44268295/139515276-ba768db2-ba0f-4b25-8a83-8d44acbc065a.png)
 
 The tool can be installed via: https://www.microsoft.com/store/apps/9NT19LVXQS0F
 
