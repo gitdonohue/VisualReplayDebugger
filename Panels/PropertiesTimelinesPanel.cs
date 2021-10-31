@@ -14,7 +14,7 @@ namespace VisualReplayDebugger.Panels
         public PropertiesTimelinesPanel(MainWindow mainwindow)
             : base(scrolling: true)
         {
-            var propertiesTimelinesView = new ReplayPropertiesTimelinesControl(mainwindow.TimelineWindow, mainwindow.Replay, mainwindow.EntitySelection);
+            var propertiesTimelinesView = new ReplayPropertiesTimelinesControl(mainwindow.TimelineWindow, mainwindow.Replay, mainwindow.EntitySelection, mainwindow.ColorProvider);
             this.Content = propertiesTimelinesView;
 
             mainwindow.ReplayChanged += (replay) => propertiesTimelinesView.Replay = replay;

@@ -41,12 +41,12 @@ namespace VisualReplayDebugger
         public ITimelineWindow TimelineWindow { get; private set; }
 
         public SelectionGroup<Entity> EntitySelection { get; private set; }
-
+        public ColorProvider ColorProvider { get; private set; }
         public WatchedBool EntitySelectionLocked { get; } = new(false);
         public WatchedBool GraphsFilled { get; } = new(true);
         public WatchedBool GraphsStackedByEntity { get; } = new(true);
         public WatchedBool GraphsStackedByParameter { get; } = new(false);
-        public WatchedBool GraphsStackedByParameterDepth { get; } = new(false);
+        public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
 
         private static System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
         private static Typeface TextTypeface = new Typeface("Arial");
@@ -54,10 +54,13 @@ namespace VisualReplayDebugger
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
         private List<Entity> LockedSelection = new();
 
-        public ReplayGraphView(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset)
+
+
+        public ReplayGraphView(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset, ColorProvider colorprovider)
         {
             TimelineWindow = timeLineWindow;
             Replay = replay;
+            ColorProvider = colorprovider;
 
             TimelineWindow.Changed += TimelineWindow_Changed;
             EntitySelection = selectionset;
@@ -408,12 +411,17 @@ namespace VisualReplayDebugger
                         double textHeight = 8;
                         double yPos = baselineHeight - textHeight - (valueAtCursor * (rectToFillForParameter.Height - textHeight) / maxVal);
 
-                        dc.DrawText(
-                           // Note: this could be cached
-                           new FormattedText($" {streamlabel} {valueAtCursor:.###}",
-                              TextCultureInfo, FlowDirection.LeftToRight, TextTypeface,
-                              8, GetRandomBrush(entryNum), 1.25),
-                              new System.Windows.Point(cursorXPos, yPos));
+                        var baseColor = ColorProvider.GetLabelColor(streamlabel);
+                        var brush = new SolidColorBrush(baseColor);
+                        if (valueAtCursor > double.Epsilon)
+                        {
+                            dc.DrawText(
+                               // Note: this could be cached
+                               new FormattedText($" {streamlabel} {valueAtCursor:.###}",
+                                  TextCultureInfo, FlowDirection.LeftToRight, TextTypeface,
+                                  8, brush, 1.25),
+                                  new System.Windows.Point(cursorXPos, yPos));
+                        }
                     }
                 }
             }
@@ -544,13 +552,15 @@ namespace VisualReplayDebugger
                                 ctx.LineTo(pts.Last().WithY(baselineHeight), true, false);
                             }
                             geometry.Freeze();
+                            var baseColor = view.ColorProvider.GetLabelColor(streamlabel);
+                            var pen = new Pen(new SolidColorBrush(baseColor), 0.75);
                             if (doFill)
                             {
-                                dc.DrawGeometry(GetRandomBrush(entryNum).WithAlpha(0.15), GetRandomPen(entryNum).WithAlpha(0.5), geometry);
+                                dc.DrawGeometry(new SolidColorBrush(baseColor).WithAlpha(0.30), pen.WithAlpha(0.70), geometry);
                             }
                             else
                             {
-                                dc.DrawGeometry(null, GetRandomPen(entryNum), geometry);
+                                dc.DrawGeometry(null, pen, geometry);
                             }
                         }
                     }
@@ -560,23 +570,6 @@ namespace VisualReplayDebugger
 
         private static System.Windows.Point IntoRect(Rect rect, double x01, double y01) => new System.Windows.Point(rect.X + x01 * rect.Width, rect.Y + ((1 - y01) * rect.Height));
         
-        static List<System.Windows.Media.Color> RandomColors = new List<System.Windows.Media.Color>
-        {
-            Colors.Red,
-            Colors.Purple,
-            Colors.Green,
-            Colors.Blue,
-            Colors.YellowGreen,
-            Colors.Orange,
-            Colors.OrangeRed
-            // TODO: add more colors
-        };
-
-        static List<SolidColorBrush> RandomBrushes = RandomColors.Select(c => new SolidColorBrush(c)).ToList();
-        static List<Pen> RandomPens = RandomBrushes.Select(b => new Pen(b, 1.5)).ToList();
-        static SolidColorBrush GetRandomBrush(int index) => RandomBrushes.ElementAt(index % RandomBrushes.Count());
-        static Pen GetRandomPen(int index) => RandomPens.ElementAt(index % RandomPens.Count());
-
         #endregion //drawing
     }
 }

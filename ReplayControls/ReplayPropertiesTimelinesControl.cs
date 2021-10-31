@@ -27,6 +27,7 @@ namespace VisualReplayDebugger
 
         private ITimelineWindow TimelineWindow;
 
+        public ColorProvider ColorProvider { get; private set; }
         private int ChannelHeight => 20;
         private double ChannelTextSize => 8;
         private static System.Globalization.CultureInfo TextCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-us");
@@ -46,10 +47,11 @@ namespace VisualReplayDebugger
             }
         }
 
-        public ReplayPropertiesTimelinesControl(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset)
+        public ReplayPropertiesTimelinesControl(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset, ColorProvider colorProvider)
         {
             TimelineWindow = timeLineWindow;
             Replay = replay;
+            ColorProvider = colorProvider;
 
             TimelineWindow.Changed += TimelineWindow_Changed;
             EntitySelection = selectionset;
@@ -219,6 +221,8 @@ namespace VisualReplayDebugger
             return rowCount * ChannelHeight;
         }
 
+        static double saturation = 0.5;
+
         protected override void OnRender(DrawingContext dc)
         {
             if (Replay == null) return;
@@ -257,7 +261,9 @@ namespace VisualReplayDebugger
                             double xStart = ((t1 - TimelineWindow.Start) / TimelineWindow.Range) * channelWidth;
                             double xWidth = ((t2 - t1) / TimelineWindow.Range) * channelWidth;
                             Rect entryBounds = new Rect(xStart, channelPos * ChannelHeight, xWidth, ChannelHeight);
-                            GetValueBrushAndPen(param,val,out Brush brush,out Pen pen);
+                            var baseColor = ColorProvider.GetLabelColor(val);
+                            var brush = new LinearGradientBrush(ColorProvider.Lighten(baseColor), ColorProvider.LightenLighten(baseColor), 90);
+                            var pen = new Pen(new SolidColorBrush(ColorProvider.Darken(baseColor)), 0.5);
                             dc.DrawRectangle(brush, pen, entryBounds);
 
                             double txtSize = ChannelTextSize;
@@ -286,7 +292,9 @@ namespace VisualReplayDebugger
                                 double xStart = ((t1 - TimelineWindow.Start) / TimelineWindow.Range) * channelWidth;
                                 double xWidth = ((t2 - t1) / TimelineWindow.Range) * channelWidth;
                                 Rect entryBounds = new Rect(xStart, channelPos * ChannelHeight, xWidth, ChannelHeight);
-                                GetValueBrushAndPen(param, fullVal, out Brush brush, out Pen pen);
+                                var baseColor = ColorProvider.GetLabelColor(fullVal);
+                                var brush = new LinearGradientBrush(ColorProvider.Lighten(baseColor), ColorProvider.LightenLighten(baseColor), 90);
+                                var pen = new Pen(new SolidColorBrush(ColorProvider.Darken(baseColor)), 0.5);
                                 dc.DrawRectangle(brush, pen, entryBounds);
 
                                 double txtSize = ChannelTextSize;
@@ -352,49 +360,6 @@ namespace VisualReplayDebugger
 
             base.OnRender(dc);
         }
-
-        static Dictionary<string, (Brush,Pen)> ValueBrushes = new();
-        static void GetValueBrushAndPen(string param, string val, out Brush brush, out Pen pen)
-        {
-            string k = $"{param}:{val}";
-            if (!ValueBrushes.TryGetValue(k, out var brushAndPen))
-            {
-                var col = RandomColors[ValueBrushes.Count() % RandomColors.Count];
-                brushAndPen = (new LinearGradientBrush(col, Lighten(col), 90),new Pen(new SolidColorBrush(Darken(col)), 0.5));
-                ValueBrushes.Add(k, brushAndPen);
-            }
-            brush = brushAndPen.Item1;
-            pen  = brushAndPen.Item2;
-        }
-
-        static List<System.Windows.Media.Color> RandomColors = new List<System.Windows.Media.Color>
-        {
-            Colors.LightGreen,
-            Colors.LightCoral,
-            Colors.LightGreen,
-            Colors.LightBlue,
-            Colors.YellowGreen,
-            Colors.LightSalmon,
-            Colors.LightYellow
-            // TODO: add more colors
-        };
-
-        static List<SolidColorBrush> RandomBrushes = RandomColors.Select(c => new SolidColorBrush(c)).ToList();
-        static List<Pen> RandomPens = RandomBrushes.Select(b => new Pen(b, 1.5)).ToList();
-        static SolidColorBrush GetRandomBrush(int index) => RandomBrushes.ElementAt(index % RandomBrushes.Count());
-
-        static System.Windows.Media.Color Lighten(System.Windows.Media.Color color)
-        {
-            var newcol = System.Windows.Forms.ControlPaint.LightLight(System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B));
-            return System.Windows.Media.Color.FromArgb(newcol.A, newcol.R, newcol.G, newcol.B);
-        }
-
-        static System.Windows.Media.Color Darken(System.Windows.Media.Color color)
-        {
-            var newcol = System.Windows.Forms.ControlPaint.Dark(System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B));
-            return System.Windows.Media.Color.FromArgb(newcol.A, newcol.R, newcol.G, newcol.B);
-        }
-
 
         #region Mouse Handling
 

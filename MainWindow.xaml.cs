@@ -33,6 +33,7 @@ namespace VisualReplayDebugger
         internal event Action<ReplayCaptureReader> ReplayChanged;
         internal TimelineWindow TimelineWindow;
         internal TimelineController TimelineController;
+        internal ColorProvider ColorProvider { get; } = new();
 
         public MainWindow()
         {

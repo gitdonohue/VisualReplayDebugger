@@ -18,7 +18,7 @@ namespace VisualReplayDebugger.Panels
         public GraphsPanel(MainWindow mainwindow)
             : base(scrolling: false)
         {
-            var graphView = new ReplayGraphView(mainwindow.TimelineWindow, mainwindow.Replay, mainwindow.EntitySelection);
+            var graphView = new ReplayGraphView(mainwindow.TimelineWindow, mainwindow.Replay, mainwindow.EntitySelection, mainwindow.ColorProvider);
             this.Content = graphView;
 
             mainwindow.ReplayChanged += (replay) => graphView.Replay = replay;
