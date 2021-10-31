@@ -33,15 +33,50 @@
             </DockingManager.DocumentHeaderTemplate>
             <LayoutRoot>
                 <LayoutPanel Orientation="Vertical">
+                    <LayoutAnchorablePaneGroup Orientation="Horizontal" DockHeight="1.2*">
+                        <LayoutAnchorablePane>
+                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Entity Timelines" x:Name="TimelinesToolWindow" IsSelected="True"/>
+                        </LayoutAnchorablePane>
+                        <LayoutAnchorablePaneGroup Orientation="Vertical">
+                            <LayoutAnchorablePane FloatingWidth="1782" FloatingHeight="224" FloatingLeft="1170" FloatingTop="450">
+                                <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Graphs" x:Name="GraphsWindow" IsSelected="True" FloatingLeft="1170" FloatingTop="450" FloatingWidth="1782" FloatingHeight="224"/>
+                            </LayoutAnchorablePane>
+                            <LayoutAnchorablePaneGroup Orientation="Horizontal" FloatingWidth="1782" FloatingHeight="297" FloatingLeft="1575" FloatingTop="574">
+                                <LayoutAnchorablePane FloatingWidth="1782" FloatingHeight="297" FloatingLeft="1575" FloatingTop="574">
+                                    <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="PropertiesTimelines" x:Name="PropertiesTimelinesWindow" IsSelected="True" FloatingLeft="1575" FloatingTop="574" FloatingWidth="1782" FloatingHeight="297"/>
+                                </LayoutAnchorablePane>
+                            </LayoutAnchorablePaneGroup>
+                        </LayoutAnchorablePaneGroup>
+                    </LayoutAnchorablePaneGroup>
+                    <LayoutAnchorablePaneGroup Orientation="Horizontal" DockHeight="0.8983880652163873*">
+                        <LayoutAnchorablePane DockWidth="1.2*">
+                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Logs" x:Name="LogsWindow" IsSelected="True" />
+                        </LayoutAnchorablePane>
+                        <LayoutAnchorablePane DockWidth="0.8*">
+                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Draws" x:Name="DrawsLogsWindow" FloatingLeft="1569" FloatingTop="967" FloatingWidth="597" FloatingHeight="443"/>
+                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Properties" x:Name="PropertiesWindow" FloatingLeft="1125" FloatingTop="955" FloatingWidth="597" FloatingHeight="443"/>
+                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Viewport" x:Name="ViewportWindow" IsSelected="True"/>
+                        </LayoutAnchorablePane>
+                    </LayoutAnchorablePaneGroup>
+                </LayoutPanel>
+            </LayoutRoot>
+            <!--
+            <LayoutRoot>
+                <LayoutPanel Orientation="Vertical">
                     <LayoutAnchorablePaneGroup>
                         <LayoutAnchorablePane>
                             <LayoutAnchorable Title="Entity Timelines" x:Name="TimelinesToolWindow"/>
                         </LayoutAnchorablePane>
-                        <LayoutAnchorablePane>
-                            <LayoutAnchorable Title="Graphs" x:Name="GraphsWindow"/>
-                            <LayoutAnchorable Title="PropertiesTimelines" x:Name="PropertiesTimelinesWindow"/>
-                        </LayoutAnchorablePane>
+
                     </LayoutAnchorablePaneGroup>
+    
+                            <LayoutAnchorablePane>
+                                <LayoutAnchorable Title="Graphs" x:Name="GraphsWindow"/>
+                            </LayoutAnchorablePane>
+                            <LayoutAnchorablePane>
+                                <LayoutAnchorable Title="PropertiesTimelines" x:Name="PropertiesTimelinesWindow"/>
+                            </LayoutAnchorablePane>
+                   
                     <LayoutAnchorablePaneGroup>
                         <LayoutAnchorablePane>
                             <LayoutAnchorable Title="Logs" x:Name="LogsWindow"/>                            
@@ -56,6 +91,7 @@
                     </LayoutAnchorablePaneGroup>
                 </LayoutPanel>
             </LayoutRoot>
+            -->
         </DockingManager>
     </DockPanel>
 </Window>

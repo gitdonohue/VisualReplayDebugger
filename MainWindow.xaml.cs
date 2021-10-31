@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using VisualReplayDebugger.Panels;
+using AvalonDock.Layout.Serialization;
 
 namespace VisualReplayDebugger
 {
@@ -36,8 +37,6 @@ namespace VisualReplayDebugger
         public MainWindow()
         {
             InitializeComponent();
-
-            //this.DockManager.Theme.
 
             this.Title = "Visual Replay Debugger";
 
@@ -147,6 +146,16 @@ namespace VisualReplayDebugger
             var showproperties = new MenuItem() { Header = "_Properties" };
             showproperties.Click += (o, e) => mainWindow.ShowOrDuplicatePanel(mainWindow.PropertiesWindow);
             viewmenu.Items.Add(showproperties);
+
+            //viewmenu.Items.Add(new Separator());
+
+            //var saveLayout = new MenuItem() { Header = "_Save Layout" };
+            //saveLayout.Click += (o, e) => new XmlLayoutSerializer(mainWindow.DockManager).Serialize("layoutserialization.xml");
+            //viewmenu.Items.Add(saveLayout);
+
+            //var loadLayout = new MenuItem() { Header = "Load _Layout" };
+            //loadLayout.Click += (o, e) => new XmlLayoutSerializer(mainWindow.DockManager).Deserialize("layoutserialization.xml");
+            //viewmenu.Items.Add(loadLayout);
         }
 
         public void ShowOrDuplicatePanel(AvalonDock.Layout.LayoutAnchorable original)
