@@ -5,9 +5,6 @@ TODO:
 - Demo (Youtube)
 
 - handle full transforms
-- add header to serialization
-- auto-detect compression
-- serialization versionning
 - don't hold left+right keys in the viewport
 
 - improve filters drop-down widgets
@@ -19,11 +16,8 @@ TODO:
 - Draw pie(dir+normal+radius+angle)
 
 - Layout save/restore/
-- Duration for primitive draws
 - Dynamic low-rez for graphs based on rendering times
 
 - Search for graphs
 - Tooltips for search bars
-- Dark theme
-- Alternate layouts
 - import video + sync offset
