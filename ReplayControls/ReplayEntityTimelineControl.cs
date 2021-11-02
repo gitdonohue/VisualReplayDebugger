@@ -98,10 +98,15 @@ namespace VisualReplayDebugger
 
 
             // Draw log ticks
+            int lastTickPos = -1;
             foreach (double tickRatio in markerPositions)
             {
                 double tickXPos = tickRatio * ActualWidth;
-                dc.DrawLine(LogTickPen, new System.Windows.Point(tickXPos, 0), new System.Windows.Point(tickXPos, ActualHeight));
+                if ((int)tickXPos != lastTickPos) // Avoid drawing multiple tickmarks at the same spot
+                {
+                    lastTickPos = (int)tickXPos;
+                    dc.DrawLine(LogTickPen, new System.Windows.Point(tickXPos, 0), new System.Windows.Point(tickXPos, ActualHeight));
+                }
             }
 
             // Draw cursor
