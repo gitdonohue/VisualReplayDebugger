@@ -221,8 +221,6 @@ namespace VisualReplayDebugger
             return rowCount * ChannelHeight;
         }
 
-        static double saturation = 0.5;
-
         protected override void OnRender(DrawingContext dc)
         {
             if (Replay == null) return;
