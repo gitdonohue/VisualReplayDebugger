@@ -123,13 +123,20 @@ namespace ReplayCapture
 
         private BinaryReplayWriter Writer;
 
+        object NullEntityObj = new object();
         private Entity GetEntity(object obj)
         {
-            if (obj != null && EntityMapping.TryGetValue(obj, out Entity entity))
+            if (obj == null) { return GetEntity(NullEntityObj); }
+            if (EntityMapping.TryGetValue(obj, out Entity entity))
             {
                 return entity;
             }
-            return null;
+            else
+            {
+                // Auto-create
+                RegisterEntity(obj, obj.ToString(), obj.ToString(), obj.GetType().Name, "None", Transform.Identity);
+                return EntityMapping[obj];
+            }
         }
 
         private void SetPosition(Entity entity, Point pos)
