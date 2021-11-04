@@ -37,18 +37,20 @@ namespace Timeline
     #region implementations
     public class Timeline : ITimeline
     {
-        public double Start { get => start; set { start = value; if (start >= end) start = end; CallChanged(); } }
+        public double Start { get => start; set { start = SafeVal(value); if (start >= end) start = end; CallChanged(); } }
         double start = 0;
 
-        public double End { get => end; set { end = value; if (end <= start) end = start; CallChanged(); } }
+        public double End { get => end; set { end = SafeVal(value); if (end <= start) end = start; CallChanged(); } }
         double end = 1;
 
-        public double Cursor { get => cursor; set { cursor = value; if (cursor < start) cursor = start; if (cursor > end) cursor = end; CallChanged(); } }
+        public double Cursor { get => cursor; set { cursor = SafeVal(value); if (cursor < start) cursor = start; if (cursor > end) cursor = end; CallChanged(); } }
         double cursor;
 
         public event Action Changed;
 
         private void CallChanged() { Changed?.Invoke(); }
+
+        public static double SafeVal(double x) => Double.IsNaN(x) ? 0 : x;
 
         public static string TimeString(double t) => TimeSpan.FromSeconds(t).ToString(@"mm\:ss\.fff");
     }
