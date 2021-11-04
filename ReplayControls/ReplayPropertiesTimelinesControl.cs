@@ -64,6 +64,9 @@ namespace VisualReplayDebugger
             this.MouseDown += OnMouseDown;
             this.MouseUp += OnMouseUp;
             this.MouseMove += OnMouseMove;
+            this.MouseDoubleClick += OnMouseDoubleClick;
+
+            this.ToolTip = new TextBlock() {};
         }
 
         public void Dispose()
@@ -122,10 +125,11 @@ namespace VisualReplayDebugger
             }
         }
 
-        IEnumerable<(int,double,double,string)> EnumerateRanges(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end)
+        IEnumerable<(int,double,double,double,double,string)> EnumerateRanges(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end)
         {
             string currentVal = string.Empty;
             double currentStartTime = 0;
+            double currentRealStartTime = 0;
             int index = 0;
             foreach (var entry in entries)
             {
@@ -135,31 +139,33 @@ namespace VisualReplayDebugger
                 }
                 else if (entry.time > end)
                 {
-                    yield return (index++, currentStartTime, end, currentVal);
+                    yield return (index++, currentStartTime, end, currentRealStartTime, entry.time, currentVal);
                     yield break;
                 }
                 else
                 {
                     if (index == 0 && entry.time > start)
                     {
-                        yield return (index++, start, entry.time, currentVal);
+                        yield return (index++, start, entry.time, currentRealStartTime, entry.time, currentVal);
                     }
                     else
                     {
-                        yield return (index++, currentStartTime, entry.time, currentVal);
+                        yield return (index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentVal);
                     }
                 }
+                if (entry.val != currentVal) { currentRealStartTime = entry.time; }
                 currentVal = entry.val;
                 currentStartTime = entry.time;
             }
-            yield return (index++, currentStartTime, end, currentVal);
+            yield return (index++, currentStartTime, end, currentRealStartTime, end, currentVal);
         }
 
-        IEnumerable<(int, double, double, string, string)> EnumerateRangesAtDepth(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end, int depth)
+        IEnumerable<(int, double, double, double, double, string, string)> EnumerateRangesAtDepth(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end, int depth)
         {
             string currentValueAtDepth = string.Empty;
             string currentFullValueAtDepth = string.Empty;
             double currentStartTime = 0;
+            double currentRealStartTime = 0;
             int index = 0;
             foreach (var entry in entries)
             {
@@ -172,18 +178,18 @@ namespace VisualReplayDebugger
                 }
                 else if (entry.time > end)
                 {
-                    yield return (index++, currentStartTime, end, currentValueAtDepth, currentFullValueAtDepth);
+                    yield return (index++, currentStartTime, end, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                     yield break;
                 }
                 else if (entryValueAtDepth != currentValueAtDepth)
                 {
                     if (index == 0 && entry.time > start)
                     {
-                        yield return (index++, start, entry.time, currentValueAtDepth, currentFullValueAtDepth);
+                        yield return (index++, start, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                     }
                     else
                     {
-                        yield return (index++, currentStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
+                        yield return (index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                     }
                 }
 
@@ -192,9 +198,10 @@ namespace VisualReplayDebugger
                     currentValueAtDepth = entryValueAtDepth;
                     currentFullValueAtDepth = entryFullValueAtDepth;
                     currentStartTime = entry.time;
+                    currentRealStartTime = entry.time;
                 }
             }
-            yield return (index++, currentStartTime, end, currentValueAtDepth, currentFullValueAtDepth);
+            yield return (index++, currentStartTime, end, currentStartTime, end, currentValueAtDepth, currentFullValueAtDepth);
         }
 
         private Rect Bounds => new Rect(0, 0, ActualWidth, ActualHeight);
@@ -221,29 +228,49 @@ namespace VisualReplayDebugger
             return rowCount * ChannelHeight;
         }
 
-        protected override void OnRender(DrawingContext dc)
+        class DrawChannel
+        {
+            public Entity entity;
+            public string parameter;
+            public List<DrawBlock> drawBlocks;
+            public Rect bounds;
+            public Rect startBounds;
+            public Rect endBounds;
+        }
+
+        class DrawBlock
+        {
+            public DrawChannel channel;
+            public Rect bounds;
+            public string val;
+            public string fullval;
+            public double startTime;
+            public double endTime;
+
+            public string RawValue => fullval ?? val;
+            public string FullValue => Stripped(RawValue);
+            public string ShortValue => Stripped(val);
+
+            public string Stripped(string txt) => txt.Split('|').FirstOrDefault()?.Trim() ?? string.Empty;
+        }
+
+        private List<DrawChannel> DrawChannels = new();
+
+
+        private void PrepRender()
         {
             if (Replay == null) return;
 
+            DrawChannels.Clear();
+
             int channelPos = 0;
-            int entityIndex = 0;
             double channelWidth = ActualWidth;
-            Entity lastEntity = null;
             foreach ((Entity entity, string param, var entryList) in EnumerateSelectedEntitiesPropertiesChannels())
             {
-                bool firstRowForEntity = false;
-                if (lastEntity != entity)
-                {
-                    if (lastEntity != null) { ++entityIndex; }
-                    firstRowForEntity = true;
-                }
-                lastEntity = entity;
+                DrawChannel channel = new() { entity = entity, parameter = param, drawBlocks = new() };
 
                 Rect channelBounds = new Rect(0, channelPos * ChannelHeight, ActualWidth, ChannelHeight);
-
-                var WindowBrush = new SolidColorBrush() { Color = System.Windows.Media.Color.FromArgb(32, 0, 0, 0) };
-                //dc.DrawRectangle(WindowBrush, null, channelBounds);
-
+                
                 var life = Replay.GetEntityLifeTime(entity);
                 var entityStartTime = Replay.GetTimeForFrame(life.Start);
                 var entityEndTime = Replay.GetTimeForFrame(life.End);
@@ -252,26 +279,14 @@ namespace VisualReplayDebugger
 
                 if (DrawLeafMode)
                 {
-                    foreach ((int index, double t1, double t2, string val) in EnumerateRanges(entryList, TimelineWindow.Start, TimelineWindow.End))
+                    foreach ((int index, double t1, double t2, double rt1, double rt2, string val) in EnumerateRanges(entryList, TimelineWindow.Start, TimelineWindow.End))
                     {
                         if (!string.IsNullOrEmpty(val))
                         {
                             double xStart = ((t1 - TimelineWindow.Start) / TimelineWindow.Range) * channelWidth;
                             double xWidth = ((t2 - t1) / TimelineWindow.Range) * channelWidth;
                             Rect entryBounds = new Rect(xStart, channelPos * ChannelHeight, xWidth, ChannelHeight);
-                            var baseColor = ColorProvider.GetLabelColor(val);
-                            var brush = new LinearGradientBrush(ColorProvider.Lighten(baseColor), ColorProvider.LightenLighten(baseColor), 90);
-                            var pen = new Pen(new SolidColorBrush(ColorProvider.Darken(baseColor)), 0.5);
-                            dc.DrawRectangle(brush, pen, entryBounds);
-
-                            double txtSize = ChannelTextSize;
-                            var txtPos = entryBounds.TopLeft;
-                            txtPos.X += 2;
-                            txtPos.Y += (ChannelHeight / 2) - txtSize / 2;
-                            dc.DrawText(new FormattedText($"{val}",
-                                    TextCultureInfo, FlowDirection.LeftToRight, TextTypeface,
-                                    txtSize, pen.Brush, 1.25),
-                                    txtPos);
+                            channel.drawBlocks.Add(new DrawBlock() { channel = channel, bounds = entryBounds, val = val, startTime = rt1, endTime = rt2 });
                         }
                     }
                     ++channelPos;
@@ -279,30 +294,18 @@ namespace VisualReplayDebugger
                 }
                 else
                 {
-                    int minDepth = entryList.Where(x=>x.SplitValues.Any()).Select(x => x.depth).Min();
+                    int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).Min();
                     int maxDepth = entryList.Select(x => x.depth).Max();
                     for (int depth = minDepth; depth <= maxDepth; ++depth)
                     {
-                        foreach ((int index, double t1, double t2, string val, string fullVal) in EnumerateRangesAtDepth(entryList, TimelineWindow.Start, TimelineWindow.End, depth))
+                        foreach ((int index, double t1, double t2, double rt1, double rt2, string val, string fullVal) in EnumerateRangesAtDepth(entryList, TimelineWindow.Start, TimelineWindow.End, depth))
                         {
                             if (!string.IsNullOrEmpty(val))
                             {
                                 double xStart = ((t1 - TimelineWindow.Start) / TimelineWindow.Range) * channelWidth;
                                 double xWidth = ((t2 - t1) / TimelineWindow.Range) * channelWidth;
                                 Rect entryBounds = new Rect(xStart, channelPos * ChannelHeight, xWidth, ChannelHeight);
-                                var baseColor = ColorProvider.GetLabelColor(fullVal);
-                                var brush = new LinearGradientBrush(ColorProvider.Lighten(baseColor), ColorProvider.LightenLighten(baseColor), 90);
-                                var pen = new Pen(new SolidColorBrush(ColorProvider.Darken(baseColor)), 0.5);
-                                dc.DrawRectangle(brush, pen, entryBounds);
-
-                                double txtSize = ChannelTextSize;
-                                var txtPos = entryBounds.TopLeft;
-                                txtPos.X += 2;
-                                txtPos.Y += (ChannelHeight / 2) - txtSize / 2;
-                                dc.DrawText( new FormattedText($"{val}",
-                                        TextCultureInfo, FlowDirection.LeftToRight, TextTypeface,
-                                        txtSize, pen.Brush, 1.25),
-                                        txtPos);
+                                channel.drawBlocks.Add(new DrawBlock() { channel = channel, bounds = entryBounds, val = val, fullval = fullVal, startTime = rt1, endTime = rt2 });
                             }
                         }
                         ++channelRows;
@@ -311,38 +314,96 @@ namespace VisualReplayDebugger
 
                 }
 
+                channelBounds.Height = channelRows * ChannelHeight;
+
                 if (entityStartTime > TimelineWindow.Start)
                 {
                     double xEntityStart = ((entityStartTime - TimelineWindow.Start) / TimelineWindow.Range) * channelWidth;
                     Rect startBounds = new Rect(0, channelBounds.Top, xEntityStart, ChannelHeight * channelRows);
-                    var grad = new LinearGradientBrush(Colors.GhostWhite, Colors.LightGray, 90);
-                    dc.DrawRectangle(grad, null, startBounds);
+                    channel.startBounds = startBounds;
                 }
 
                 if (entityEndTime < TimelineWindow.End)
                 {
                     double xEntityEnd = (1 - ((TimelineWindow.End - entityEndTime) / TimelineWindow.Range)) * channelWidth;
                     Rect endBounds = new Rect(xEntityEnd, channelBounds.Top, channelWidth - xEntityEnd, ChannelHeight * channelRows);
-                    var grad = new LinearGradientBrush(Colors.GhostWhite, Colors.LightGray, 90);
-                    dc.DrawRectangle(grad, null, endBounds);
+                    channel.endBounds = endBounds;
                 }
 
-                if (firstRowForEntity)
+                channel.bounds = channelBounds;
+                DrawChannels.Add(channel);
+            }
+
+            _blockUnderMouse = FindBlockAtPos(MouseLastPos);
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            if (Replay == null) return;
+            
+            PrepRender();
+
+            var outOfBoundsGradient = new LinearGradientBrush(Colors.GhostWhite, Colors.LightGray, 90);
+
+            var channelGroups = DrawChannels.GroupBy(x => x.entity);
+            int groupsCount = channelGroups.Count();
+            int groupNum = 0;
+            foreach (var channelGroup in channelGroups)
+            {
+                int channelForEntityCount = 0;
+                foreach(var channel in channelGroup)
                 {
-                    dc.DrawText(new FormattedText($"{entity.Name}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), channelBounds.TopLeft);
+                    foreach (DrawBlock block in channel.drawBlocks)
+                    {
+                        var baseColor = ColorProvider.GetLabelColor(block.FullValue);
+                        var brush = new LinearGradientBrush(ColorProvider.Lighten(baseColor), ColorProvider.LightenLighten(baseColor), 90);
+                        var pen = new Pen(new SolidColorBrush(ColorProvider.Darken(baseColor)), 0.5);
+                        if (block == BlockUnderMouse) 
+                        { 
+                            pen = new Pen(new SolidColorBrush(Colors.White), 0.5); 
+                        }
+                        dc.DrawRectangle(brush, pen, block.bounds);
+
+                        double txtSize = ChannelTextSize;
+                        var txtPos = block.bounds.TopLeft;
+                        txtPos.X += 2;
+                        txtPos.Y += (ChannelHeight / 2) - txtSize / 2;
+                        dc.DrawText(new FormattedText($"{block.ShortValue}",
+                                TextCultureInfo, FlowDirection.LeftToRight, TextTypeface,
+                                txtSize, pen.Brush, 1.25),
+                                txtPos);
+                    }
+
+                    if (channel.startBounds.Width > 0)
+                    {
+                        dc.DrawRectangle(outOfBoundsGradient, null, channel.startBounds);
+                    }
+
+                    if (channel.endBounds.Width > 0)
+                    {
+                        dc.DrawRectangle(outOfBoundsGradient, null, channel.endBounds);
+                    }
+
+                    // Entity labels
+                    var labelPos = channel.bounds.TopLeft;
+                    labelPos.X += 20;
+                    labelPos.Y += 7;
+                    dc.DrawText(new FormattedText($"{channel.parameter}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), labelPos);
+
+                    if (channelForEntityCount == 0)
+                    {
+                        dc.DrawText(new FormattedText($"{channel.entity.Name}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), channel.bounds.TopLeft);
+                    }
+
+                    // Line between entities
+                    if (channelForEntityCount == 0 && groupNum > 0)
+                    {
+                        dc.DrawLine(InterEntityPen, channel.bounds.TopLeft, channel.bounds.TopRight);
+                    }
+
+                    ++channelForEntityCount;
                 }
-
-                // Entity labels
-                var labelPos = channelBounds.TopLeft;
-                labelPos.X += 20;
-                labelPos.Y += 7;
-                dc.DrawText(new FormattedText($"{param}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), labelPos);
-
-                if (firstRowForEntity && entityIndex > 0)
-                {
-                    dc.DrawLine(InterEntityPen, channelBounds.TopLeft, channelBounds.TopRight);
-                }
-
+                ++groupNum;
             }
 
             ////
@@ -357,6 +418,60 @@ namespace VisualReplayDebugger
             dc.DrawLine(CursorPen, new System.Windows.Point(cursorXPos, 0), new System.Windows.Point(cursorXPos, ActualHeight));
 
             base.OnRender(dc);
+        }
+
+        private DrawBlock _blockUnderMouse;
+        private DrawBlock BlockUnderMouse
+        {
+            get => _blockUnderMouse;
+            set
+            {
+                if (value != _blockUnderMouse )
+                {
+                    _blockUnderMouse = value;
+                    SetDirty();
+                }
+            }
+        }
+
+        private DrawBlock FindBlockAtPos(System.Windows.Point pos)
+        {
+            if (DrawChannels.Any())
+            {
+                foreach (var channel in DrawChannels)
+                {
+                    if ( channel.bounds.Contains(pos) )
+                    {
+                        foreach (var block in channel.drawBlocks)
+                        {
+                            if (block.bounds.Contains(pos))
+                            {
+                                return block;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void RefreshTooltipText()
+        {
+            if (BlockUnderMouse != null)
+            {
+                string txt = $"{BlockUnderMouse.channel.entity.Name}\n{BlockUnderMouse.channel.parameter} : {(BlockUnderMouse.RawValue)}";
+                SetTooltipText(txt);
+            }
+        }
+
+        private void SetTooltipText(string text)
+        {
+            var tt = this.ToolTip as TextBlock;
+            if (tt != null && text != null)
+            {
+                tt.Text = text;
+            }
         }
 
         #region Mouse Handling
@@ -435,6 +550,9 @@ namespace VisualReplayDebugger
             var delta = scroll - MouseLastPos;
             MouseLastPos = scroll;
 
+            BlockUnderMouse = FindBlockAtPos(MouseLastPos);
+            RefreshTooltipText();
+
             if (Math.Abs(delta.X) > 0)
             {
                 MouseDidMove = true;
@@ -453,6 +571,17 @@ namespace VisualReplayDebugger
                     CursorUnitPos = mouseUnitPos;
                     SetDirty();
                 }
+            }
+        }
+
+        private void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (BlockUnderMouse != null)
+            {
+                TimelineWindow.Start = BlockUnderMouse.startTime;
+                TimelineWindow.End = BlockUnderMouse.endTime;
+                double midpoint = TimelineWindow.Start + (TimelineWindow.End - TimelineWindow.Start) / 2;
+                TimelineWindow.ScaleWindow(1.2, midpoint);
             }
         }
 
