@@ -38,6 +38,20 @@ namespace VisualReplayDebugger.Panels
 
             ToolBar.Items.Add(new Separator());
 
+            var prev = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowLeft), ToolTip = "Move to previous event" };
+            prev.Click += (o, e) => propertiesTimelinesView.MoveToPrevEvent();
+            ToolBar.Items.Add(prev);
+
+            var next = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowRight), ToolTip = "Move to next event" };
+            next.Click += (o, e) => propertiesTimelinesView.MoveToNextEvent();
+            ToolBar.Items.Add(next);
+
+            var zoomSmallest = new Button() { Content = GetIcon(FontAwesomeIcon.Compress), ToolTip = "Zoom on smallest block" };
+            zoomSmallest.Click += (o, e) => propertiesTimelinesView.ZoomSmallestOnCursor();
+            ToolBar.Items.Add(zoomSmallest);
+
+            ToolBar.Items.Add(new Separator());
+
             var lockEntitySelection = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
             lockEntitySelection.BindTo(propertiesTimelinesView.EntitySelectionLocked);
             ToolBar.Items.Add(lockEntitySelection);

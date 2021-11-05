@@ -66,6 +66,8 @@ namespace VisualReplayDebugger
             this.MouseUp += OnMouseUp;
             this.MouseMove += OnMouseMove;
             this.MouseDoubleClick += OnMouseDoubleClick;
+            this.MouseLeave += OnMouseLeave;
+            this.MouseWheel += OnMouseWheel;
 
             this.ToolTip = new TextBlock() {};
         }
@@ -74,6 +76,64 @@ namespace VisualReplayDebugger
         {
             TimelineWindow.Changed -= TimelineWindow_Changed;
             EntitySelection.Changed -= EntitySelection_Changed;
+        }
+
+        public void MoveToPrevEvent()
+        {
+            if (DrawChannels.Any())
+            {
+                // Find closest transition to left
+                double t = TimelineWindow.Timeline.Cursor;
+                var closest = EnumerateAllTransitions().Where(x => x.Item1 < t).OrderBy(x => t - x.Item1).FirstOrDefault();
+                if (closest.Item2 != null)
+                {
+                    TimelineWindow.Timeline.Cursor = closest.Item1;
+                }
+            }
+        }
+
+        public void MoveToNextEvent()
+        {
+            if (DrawChannels.Any())
+            {
+                // Find closest transition to right
+                double t = TimelineWindow.Timeline.Cursor;
+                var closest = EnumerateAllTransitions().Where(x => x.Item1 > t).OrderBy(x => x.Item1 - t).FirstOrDefault();
+                if (closest.Item2 != null)
+                {
+                    TimelineWindow.Timeline.Cursor = closest.Item1;
+                }
+            }
+        }
+
+        public void ZoomSmallestOnCursor()
+        {
+            if (DrawChannels.Any())
+            {
+                double t = TimelineWindow.Timeline.Cursor + double.Epsilon;
+                var smallest = EnumerateAllBlocks().Where(b => b.startTime <= t && b.endTime > t).OrderBy(b => b.endTime - b.startTime).FirstOrDefault();
+                ZoomOnBlock(smallest);
+            }
+        }
+
+        private IEnumerable<DrawBlock> EnumerateAllBlocks()
+        {
+            foreach (var channel in DrawChannels)
+            {
+                foreach (var block in channel.drawBlocks)
+                {
+                    yield return block;
+                }
+            }
+        }
+
+        private IEnumerable<(double,DrawBlock)> EnumerateAllTransitions()
+        {
+            foreach (var block in EnumerateAllBlocks())
+            {
+                yield return (block.startTime, block);
+                yield return (block.endTime, block);
+            }
         }
 
         private void TimelineWindow_Changed()
@@ -525,6 +585,19 @@ namespace VisualReplayDebugger
         {
             //IsScrubActive = false;
             //IsScrollActive = false;
+            MouseLastPos = new System.Windows.Point();
+            BlockUnderMouse = null;
+        }
+
+        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (TimelineWindow != null)
+            {
+                double zoomFactor = 1.0 + e.Delta * 0.0005f;
+                double zoomAboutPos = TimelineWindow.Start + (TimelineWindow.Range * e.GetPosition(this).X / ActualWidth);
+                TimelineWindow?.ScaleWindow(zoomFactor, zoomAboutPos);
+            }
+            e.Handled = true;
         }
 
         private void OnMouseUp(object sender, MouseButtonEventArgs e)
@@ -579,10 +652,15 @@ namespace VisualReplayDebugger
 
         private void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (BlockUnderMouse != null)
+            ZoomOnBlock(BlockUnderMouse);
+        }
+
+        private void ZoomOnBlock(DrawBlock block)
+        {
+            if (block != null)
             {
-                TimelineWindow.Start = BlockUnderMouse.startTime;
-                TimelineWindow.End = BlockUnderMouse.endTime;
+                TimelineWindow.Start = block.startTime;
+                TimelineWindow.End = block.endTime;
                 double midpoint = TimelineWindow.Start + (TimelineWindow.End - TimelineWindow.Start) / 2;
                 TimelineWindow.ScaleWindow(1.2, midpoint);
             }
