@@ -56,9 +56,9 @@ namespace VisualReplayDebugger
             if (Replay == null) return;
 
             int frame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
-            var searchString = SearchText.Value?.ToLower()??string.Empty;
+            var search = new SearchContext(SearchText.Value);
             var txt = string.Join("\n----------\n",
-                SelectedEntities.Select(x => string.Join('\n', Replay.AllParametersAt(x, frame).Where(s=>s.Item1.ToLower().Contains(searchString)).Select(s => $"{s.Item1}\t{s.Item2}"))));
+                SelectedEntities.Select(x => string.Join('\n', Replay.AllParametersAt(x, frame).Where(s=>search.Match(s.Item1)).Select(s => $"{s.Item1}\t{s.Item2}"))));
             this.Text = txt;
         }
 

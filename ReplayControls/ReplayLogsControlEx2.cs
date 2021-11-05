@@ -51,8 +51,6 @@ namespace VisualReplayDebugger
         private List<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> AllLogs = new();
         private List<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> ActiveLogs = new();
 
-        private string searchstring_nocaps;
-
         public record TextEntry
         {
             public string Text;
@@ -67,8 +65,6 @@ namespace VisualReplayDebugger
             Replay = replay;
             EntitySelection = entitySelection;
             TimelineWindow = timelineWindow;
-
-            SearchText.Changed += () => { searchstring_nocaps = SearchText.Value.ToLowerInvariant(); };
 
             TimelineWindow.Changed += TimelineWindow_Changed;
             EntitySelection.Changed += EntitySelection_Changed;
@@ -94,14 +90,16 @@ namespace VisualReplayDebugger
         private string LogHeaderFormat(int frame, Entity entity, string category, string log) => entity == null ? log : $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) [{entity.Name}] -";
         private string LogFormat(int frame, Entity entity, string category, string log) => log;
 
-        IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectSelectedLogs() =>
-            AllLogs.Where(x => (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
+        IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectSelectedLogs()
+        {
+            var search = new SearchContext(SearchText.Value);
+            return AllLogs.Where(x => (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
                 && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
                 && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
-                && (string.IsNullOrEmpty(searchstring_nocaps)
-                    || x.logHeader.ToLowerInvariant().Contains(searchstring_nocaps)
-                    || x.formattedLog.ToLowerInvariant().Contains(searchstring_nocaps))
+                && (search.Match(x.logHeader)||search.Match(x.formattedLog))
             );
+        }
+
         private IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectLogs()
         {
             var windowRange = Replay.GetFramesForTimes(TimelineWindow.Start, TimelineWindow.End);

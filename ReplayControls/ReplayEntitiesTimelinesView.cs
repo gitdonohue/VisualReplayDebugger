@@ -84,16 +84,11 @@ namespace VisualReplayDebugger
             this.Items.Clear();
             if (replay != null)
             {
-                string[] searchstrings = null;
-                if (!string.IsNullOrEmpty(SearchText))
-                {
-                    searchstrings = SearchText.Value.ToLower().Split();
-                }
-
+                var search = new SearchContext(SearchText.Value);
                 foreach (var entity in replay.Entities)
                 {
-                    if (searchstrings != null && !searchstrings.All(s => entity.Path.ToLower().Contains(s))) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
+                    if (!search.Match(entity.Path)) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));
                 }
             }

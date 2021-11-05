@@ -60,6 +60,7 @@ namespace VisualReplayDebugger
             EntitySelectionLocked.Changed += SetDirty;
             ParameterFilter.Changed += SetDirty;
             StackedByParameterDepth.Changed += SetDirty;
+            SearchText.Changed += SetDirty;
 
             this.MouseDown += OnMouseDown;
             this.MouseUp += OnMouseUp;
@@ -110,13 +111,15 @@ namespace VisualReplayDebugger
 
         IEnumerable<(Entity, string, List<ReplayCaptureReader.DynamicParamTimeEntry>)> EnumerateSelectedEntitiesPropertiesChannels()
         {
+            var search = new SearchContext(SearchText.Value);
             foreach (var entity in EnumerateSelectedEntitiesWithDynamicProperties())
             {
                 if (Replay.EntityDynamicParams.TryGetValue(entity, out var dict))
                 {
                     foreach((string param, var lst) in dict)
                     {
-                        if (!ParameterFilter.Contains(param))
+                        if (!ParameterFilter.Contains(param)
+                            && search.Match(param) )
                         {
                             yield return (entity, param, lst);
                         }
