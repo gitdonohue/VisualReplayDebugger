@@ -71,21 +71,21 @@ namespace ReplayCapture
 
         public void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string> staticParameters = null)
         {
-            EntityCounter++;
-            var entity = new Entity()
+            if (!EntityMapping.TryGetValue(obj, out Entity entity))
             {
-                Id = EntityCounter,
-                Name = name,
-                Path = path,
-                TypeName = typename,
-                CategoryName = categoryname,
-                InitialTransform = initialTransofrm,
-                StaticParameters = staticParameters ?? new Dictionary<string, string>(),
-                CreationFrame = FrameCounter
-            };
-            Entities.Add(entity);
-            EntityMapping[obj] = entity;
+                EntityCounter++;
+                entity = new Entity() { Id = EntityCounter };
+                Entities.Add(entity);
+                EntityMapping[obj] = entity;
+            }
 
+            entity.CreationFrame = FrameCounter;
+            entity.Name = name;
+            entity.Path = path;
+            entity.TypeName = typename;
+            entity.CategoryName = categoryname;
+            entity.InitialTransform = initialTransofrm;
+            entity.StaticParameters = staticParameters ?? new Dictionary<string, string>();
             Writer?.WriteEntityDef(entity, FrameCounter);
         }
 
@@ -369,34 +369,11 @@ namespace ReplayCapture
             w.Write7BitEncodedInt(entity.CreationFrame);
         }
 
-        public static void Read(this BinaryReaderEx r, out Entity entity)
-        {
-            entity = new Entity();
-            entity.Id = r.Read7BitEncodedInt();
-            entity.Name = r.ReadString();
-            entity.Path = r.ReadString();
-            entity.TypeName = r.ReadString();
-            entity.CategoryName = r.ReadString();
-            r.Read(out entity.InitialTransform);
-            r.Read(out entity.StaticParameters);
-            entity.CreationFrame = r.Read7BitEncodedInt();
-        }
-
         public static void Write(this BinaryWriter w, Point point)
         {
             w.Write(point.X);
             w.Write(point.Y);
             w.Write(point.Z);
-        }
-
-        public static void Read(this BinaryReader r, out Point point)
-        {
-            point = new Point()
-            {
-                X = r.ReadSingle(),
-                Y = r.ReadSingle(),
-                Z = r.ReadSingle()
-            };
         }
 
         public static void Write(this BinaryWriter w, Quaternion quat)
@@ -407,28 +384,10 @@ namespace ReplayCapture
             w.Write(quat.W);
         }
 
-        public static void Read(this BinaryReader r, out Quaternion quat)
-        {
-            quat = new Quaternion()
-            {
-                X = r.ReadSingle(),
-                Y = r.ReadSingle(),
-                Z = r.ReadSingle(),
-                W = r.ReadSingle()
-            };
-        }
-
         public static void Write(this BinaryWriter w, Transform xform)
         {
             w.Write(xform.Translation);
             w.Write(xform.Rotation);
-        }
-
-        public static void Read(this BinaryReader r, out Transform xform)
-        {
-            r.Read(out Point t);
-            r.Read(out Quaternion rot);
-            xform = new Transform() { Translation = t, Rotation = rot };
         }
 
         public static void Write(this BinaryWriterEx w, Dictionary<string, string> stringDict)
@@ -441,32 +400,10 @@ namespace ReplayCapture
             }
         }
 
-        public static void Read(this BinaryReaderEx r, out Dictionary<string, string> stringDict)
-        {
-            stringDict = new Dictionary<string, string>();
-            int count = r.Read7BitEncodedInt();
-            while (count-- > 0)
-            {
-                stringDict.Add(r.ReadString(), r.ReadString());
-            }
-        }
-
         public static void Write(this BinaryWriterEx w, Color color)
         {
             w.Write7BitEncodedInt((int)color);
         }
-
-        public static void Read(this BinaryReaderEx r, out Color color)
-        {
-            color = (Color)r.Read7BitEncodedInt();
-        }
-    }
-
-    // 7BitEncodedInt marked protected in prior versions of .net
-    public class BinaryReaderEx : BinaryReader
-    {
-        public BinaryReaderEx(Stream input, System.Text.Encoding encoding) : base(input, encoding) { }
-        new public int Read7BitEncodedInt() => base.Read7BitEncodedInt();
     }
 
     // 7BitEncodedInt marked protected in prior versions of .net

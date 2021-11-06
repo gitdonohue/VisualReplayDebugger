@@ -241,7 +241,7 @@ namespace ReplayCapture
         public IEnumerable<Color> GetDrawColors() => DrawCommands.Select(x => x.Item2.color).Distinct();
 
         public List<float> FrameTimes { get; private set; } = new List<float>() { 0 };
-        public List<Entity> Entities { get; private set; } = new();
+        public List<EntityEx> Entities { get; private set; } = new();
         public Dictionary<Entity, FrameRange> EntityLifeTimes { get; private set; } = new();
         private ForDict<Entity, FrameStampedList<Transform>> EntitySetTransforms { get; set; } = new();
         public FrameStampedList<(Entity, string, string, Color)> LogEntries { get; private set; } = new();
@@ -269,7 +269,7 @@ namespace ReplayCapture
             public Point Dimensions => p2;
             public double Radius => scale;
 
-            public bool IsCreationDraw => entity != null && entity.CreationFrame == frame && string.IsNullOrEmpty(category);
+            public bool IsCreationDraw => entity != null && (entity as EntityEx).RegistrationFrame == frame && string.IsNullOrEmpty(category);
         }
         public FrameStampedList<EntityDrawCommand> DrawCommands { get; private set; } = new();
 
@@ -328,10 +328,25 @@ namespace ReplayCapture
                         int id = reader.Read7BitEncodedInt();
                         if (blockType == BlockType.EntityDef)
                         {
-                            reader.Read(out Entity entitydef);
-                            Entities.Add(entitydef);
+                            reader.Read(out EntityEx entitydef);
+                            var previouslyDefinedEntity = Entities.FirstOrDefault(x => x.Id == entitydef.Id) as EntityEx;
+                            if (previouslyDefinedEntity != null)
+                            {
+                                // Overrides
+                                previouslyDefinedEntity.Name = entitydef.Name;
+                                previouslyDefinedEntity.Path = entitydef.Path;
+                                previouslyDefinedEntity.CategoryName = entitydef.CategoryName;
+                                previouslyDefinedEntity.TypeName = entitydef.TypeName;
+                                previouslyDefinedEntity.InitialTransform = entitydef.InitialTransform;
+                                previouslyDefinedEntity.StaticParameters = entitydef.StaticParameters;
+                                previouslyDefinedEntity.RegistrationFrame = entitydef.CreationFrame;
+                            }
+                            else
+                            {
+                                Entities.Add(entitydef);
+                            }
                         }
-                        Entity entity = (id > 0) ? Entities[id - 1] : null;
+                        EntityEx entity = (id > 0) ? Entities[id - 1] : null;
 
                         switch (blockType)
                         {
@@ -346,6 +361,7 @@ namespace ReplayCapture
                                     if (!last_xforms.TryGetValue(entity, out Transform xform)) { xform = new Transform(); xform.Rotation.W = 1; }
                                     xform.Translation = p;
                                     EntitySetTransforms.For(entity)?.Add(frame, xform);
+                                    entity.HasTransforms = true;
                                     last_xforms[entity] = xform;
                                 }
                                 break;
@@ -353,6 +369,7 @@ namespace ReplayCapture
                                 {
                                     reader.Read(out Transform xform);
                                     EntitySetTransforms.For(entity)?.Add(frame, xform);
+                                    entity.HasTransforms = true;
                                     last_xforms[entity] = xform;
                                 }
                                 break;
@@ -362,6 +379,7 @@ namespace ReplayCapture
                                     string msg = reader.ReadString();
                                     msg = msg.Replace('\n','|'); // newlines stripped
                                     reader.Read(out Color color);
+                                    entity.HasLogs = true;
                                     LogEntries.Add(frame, (entity, category, msg, color));
                                 }
                                 break;
@@ -369,6 +387,7 @@ namespace ReplayCapture
                                 {
                                     string label = reader.ReadString();
                                     string val = reader.ReadString();
+                                    entity.HasParameters = true;
                                     AddToDynamicPropertiesTable(entity, frame, label, val);
                                 }
                                 break;
@@ -376,6 +395,7 @@ namespace ReplayCapture
                                 {
                                     string label = reader.ReadString();
                                     float val = reader.ReadSingle();
+                                    entity.HasNumericParameters = true;
                                     EntityDynamicValues.For(entity)?.Add(frame, (label, val));
                                 }
                                 break;
@@ -385,6 +405,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p1);
                                     reader.Read(out Point p2);
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
                                 }
                                 break;
@@ -395,6 +416,7 @@ namespace ReplayCapture
                                     reader.Read(out Point up);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
                                 }
                                 break;
@@ -404,6 +426,7 @@ namespace ReplayCapture
                                     reader.Read(out Point center);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
                                 }
                                 break;
@@ -413,6 +436,7 @@ namespace ReplayCapture
                                     reader.Read(out Transform xform);
                                     reader.Read(out Point dimensions);
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
                                 }
                                 break;
@@ -423,6 +447,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p2);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
                                 }
                                 break;
@@ -433,6 +458,8 @@ namespace ReplayCapture
                                     Point[] verts = new Point[vertexCount];
                                     for(int i = 0; i < vertexCount; ++i) { reader.Read(out Point p); verts[i] = p; }
                                     reader.Read(out Color color);
+                                    entity.HasDraws = true;
+                                    entity.HasMesh = true;
                                     DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
                                 }
                                 break;
@@ -445,5 +472,82 @@ namespace ReplayCapture
                 // EOF
             }
         }
+    }
+
+    public class EntityEx : Entity
+    {
+        public int RegistrationFrame;
+        public bool HasTransforms;
+        public bool HasLogs;
+        public bool HasDraws;
+        public bool HasMesh;
+        public bool HasParameters;
+        public bool HasNumericParameters;
+    }
+
+    internal static class BinaryIOExtensionsRead
+    {
+        public static void Read(this BinaryReaderEx r, out EntityEx entity)
+        {
+            entity = new EntityEx();
+            entity.Id = r.Read7BitEncodedInt();
+            entity.Name = r.ReadString();
+            entity.Path = r.ReadString();
+            entity.TypeName = r.ReadString();
+            entity.CategoryName = r.ReadString();
+            r.Read(out entity.InitialTransform);
+            r.Read(out entity.StaticParameters);
+            entity.CreationFrame = r.Read7BitEncodedInt();
+        }
+
+        public static void Read(this BinaryReader r, out Point point)
+        {
+            point = new Point()
+            {
+                X = r.ReadSingle(),
+                Y = r.ReadSingle(),
+                Z = r.ReadSingle()
+            };
+        }
+
+        public static void Read(this BinaryReader r, out Quaternion quat)
+        {
+            quat = new Quaternion()
+            {
+                X = r.ReadSingle(),
+                Y = r.ReadSingle(),
+                Z = r.ReadSingle(),
+                W = r.ReadSingle()
+            };
+        }
+
+        public static void Read(this BinaryReader r, out Transform xform)
+        {
+            r.Read(out Point t);
+            r.Read(out Quaternion rot);
+            xform = new Transform() { Translation = t, Rotation = rot };
+        }
+
+        public static void Read(this BinaryReaderEx r, out Dictionary<string, string> stringDict)
+        {
+            stringDict = new Dictionary<string, string>();
+            int count = r.Read7BitEncodedInt();
+            while (count-- > 0)
+            {
+                stringDict.Add(r.ReadString(), r.ReadString());
+            }
+        }
+
+        public static void Read(this BinaryReaderEx r, out Color color)
+        {
+            color = (Color)r.Read7BitEncodedInt();
+        }
+    }
+
+    // 7BitEncodedInt marked protected in prior versions of .net
+    public class BinaryReaderEx : BinaryReader
+    {
+        public BinaryReaderEx(Stream input, System.Text.Encoding encoding) : base(input, encoding) { }
+        new public int Read7BitEncodedInt() => base.Read7BitEncodedInt();
     }
 }
