@@ -21,8 +21,8 @@ namespace VisualReplayDebugger
     {
         public WatchedVariable<string> SearchText { get; } = new();
         public ITimelineWindow TimelineWindow { get; private set; }
-
         public SelectionGroup<string> TimelineEntityCategoryFilter { get; private set; } = new();
+        public WatchedBool ShowAllEntities { get; } = new(false);
 
         public int LabelWidth => 250;
 
@@ -65,8 +65,8 @@ namespace VisualReplayDebugger
             };
 
             SearchText.Changed += Rebuild;
-
             TimelineEntityCategoryFilter.Changed += Rebuild;
+            ShowAllEntities.Changed += Rebuild;
 
             this.MouseDoubleClick += (o, e) => DoubleClicked?.Invoke();
             this.MouseDown += OnMouseDown;
@@ -87,6 +87,7 @@ namespace VisualReplayDebugger
                 var search = new SearchContext(SearchText.Value);
                 foreach (var entity in replay.Entities)
                 {
+                    if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogs & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
                     if (!search.Match(entity.Path)) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));

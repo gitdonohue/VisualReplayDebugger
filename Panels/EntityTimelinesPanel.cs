@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using WatchedVariable;
 
 namespace VisualReplayDebugger.Panels
@@ -39,6 +40,10 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(zoomRange);
 
             ToolBar.Items.Add(new Separator());
+
+            var showAll = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show All Entities" };
+            showAll.BindTo(entityTimelineView.ShowAllEntities);
+            ToolBar.Items.Add(showAll);
 
             var cb = new CheckComboBoxControl("Entity Categories");
             mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.GetEntityCategories(), true); };
