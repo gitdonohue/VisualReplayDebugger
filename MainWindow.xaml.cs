@@ -60,6 +60,7 @@ namespace VisualReplayDebugger
             DrawsLogsWindow.Content = new DrawLogsPanel(this);
             ViewportWindow.Content = new ViewportPanel(this);
             PropertiesWindow.Content = new PropertiesPanel(this);
+            VideoWindow.Content = new VideoPanel(this); 
 
             // Keyboard Actions
             RoutedCommand leftCommand = new RoutedCommand();
