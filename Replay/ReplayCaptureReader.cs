@@ -295,8 +295,16 @@ namespace ReplayCapture
                 {
                     // Wrap in a deflate stream
                     stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
-                }           
-                LoadCapture(new BinaryReaderEx(stream, BinaryReplayWriter.StringEncoding));
+                }
+
+                try
+                {
+                    LoadCapture(new BinaryReaderEx(stream, BinaryReplayWriter.StringEncoding));
+                }
+                catch (InvalidOperationException)
+                {
+                    // The compressed streams sometimes fail not as EndOfStreamException.
+                }
             }
         }
 
@@ -304,9 +312,12 @@ namespace ReplayCapture
         {
             try
             {
+                int blockCount = 0;
                 Dictionary<Entity, Transform> last_xforms = new();
                 while(true)
                 {
+                    ++blockCount;
+                    //System.Diagnostics.Debug.WriteLine($"Processing block #{blockCount}");
                     int blockTypeVal = reader.Read7BitEncodedInt();
                     if (blockTypeVal == 0 || !Enum.IsDefined(typeof(BlockType), blockTypeVal)) throw new InvalidOperationException("Invalid block type. Probably not a valid replay file.");
 
