@@ -200,7 +200,11 @@ namespace VisualReplayDebugger
             }
 
             double verticalOffset = lineNumAtCursorFrame * LineHeight - (ViewportHeight-LineHeight);
-            if (!IsJumpingToTime) ScrollOwner.ScrollToVerticalOffset(verticalOffset);
+            if (!IsJumpingToTime)
+            {
+                //System.Diagnostics.Debug.WriteLine($"Log jump to line {lineNumAtCursorFrame} at {verticalOffset}");
+                if (verticalOffset>=0) ScrollOwner.ScrollToVerticalOffset(verticalOffset);
+            }
 
             RefreshLogs();
         }
