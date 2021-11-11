@@ -301,9 +301,10 @@ namespace ReplayCapture
                 {
                     LoadCapture(new BinaryReaderEx(stream, BinaryReplayWriter.StringEncoding));
                 }
-                catch (InvalidOperationException)
+                catch (Exception e)
                 {
                     // The compressed streams sometimes fail not as EndOfStreamException.
+                    System.Diagnostics.Debug.WriteLine($"{e}");
                 }
             }
         }
