@@ -205,9 +205,12 @@ namespace ReplayCapture
 
         public void WriteFrameStep(int frame, float totalTime)
         {
-            _writer?.Write7BitEncodedInt((int)BlockType.FrameStep);
-            //_writer?.Write(frame);
-            _writer?.Write(totalTime);
+            lock (this)
+            {
+                _writer?.Write7BitEncodedInt((int)BlockType.FrameStep);
+                //_writer?.Write(frame);
+                _writer?.Write(totalTime);
+            }
         }
 
         private void WriteEntityHeader(BlockType blockType, Entity entity, int frame)
@@ -219,106 +222,145 @@ namespace ReplayCapture
 
         public void WriteEntityDef(Entity entity, int frame)
         {
-            WriteEntityHeader(BlockType.EntityDef, entity, frame);
-            _writer?.Write(entity);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityDef, entity, frame);
+                _writer?.Write(entity);
+            }
         }
 
         public void WriteEntityUndef(Entity entity, int frame)
         {
-            WriteEntityHeader(BlockType.EntityUndef, entity, frame);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityUndef, entity, frame);
+            }
         }
 
         public void WriteEntitySetPos(Entity entity, int frame, Point pos)
         {
-            WriteEntityHeader(BlockType.EntitySetPos, entity, frame);
-            _writer?.Write(pos);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntitySetPos, entity, frame);
+                _writer?.Write(pos);
+            }
         }
 
         public void WriteEntitySetTransform(Entity entity, int frame, Transform xform)
         {
-            WriteEntityHeader(BlockType.EntitySetTransform, entity, frame);
-            _writer?.Write(xform);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntitySetTransform, entity, frame);
+                _writer?.Write(xform);
+            }
         }
 
         public void WriteEntityLog(Entity entity, int frame, string category, string message, Color color)
         {
-            WriteEntityHeader(BlockType.EntityLog, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(message);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityLog, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(message);
+                _writer?.Write(color);
+            }
         }
 
         public void WriteEntityParameter(Entity entity, int frame, string label, string value)
         {
-            WriteEntityHeader(BlockType.EntityParameter, entity, frame);
-            _writer?.Write(label);
-            _writer?.Write(value);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityParameter, entity, frame);
+                _writer?.Write(label);
+                _writer?.Write(value);
+            }
         }
 
         public void WriteEntityValue(Entity entity, int frame, string label, float value)
         {
-            WriteEntityHeader(BlockType.EntityValue, entity, frame);
-            _writer?.Write(label);
-            _writer?.Write(value);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityValue, entity, frame);
+                _writer?.Write(label);
+                _writer?.Write(value);
+            }
         }
 
         public void WriteEntityLine(Entity entity, int frame, string category, Point start, Point end, Color color)
         {
-            WriteEntityHeader(BlockType.EntityLine, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(start);
-            _writer?.Write(end);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityLine, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(start);
+                _writer?.Write(end);
+                _writer?.Write(color);
+            }
         }
 
         public void WriteEntityCircle(Entity entity, int frame, string category, Point position, Point up, float radius, Color color)
         {
-            WriteEntityHeader(BlockType.EntityCircle, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(position);
-            _writer?.Write(up);
-            _writer?.Write(radius);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityCircle, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(position);
+                _writer?.Write(up);
+                _writer?.Write(radius);
+                _writer?.Write(color);
+            }
         }
 
         public void WriteEntitySphere(Entity entity, int frame, string category, Point center, float radius, Color color)
         {
-            WriteEntityHeader(BlockType.EntitySphere, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(center);
-            _writer?.Write(radius);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntitySphere, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(center);
+                _writer?.Write(radius);
+                _writer?.Write(color);
+            }
         }
 
         public void WriteEntityCapsule(Entity entity, int frame, string category, Point p1, Point p2, float radius, Color color)
         {
-            WriteEntityHeader(BlockType.EntityCapsule, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(p1);
-            _writer?.Write(p2);
-            _writer?.Write(radius);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityCapsule, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(p1);
+                _writer?.Write(p2);
+                _writer?.Write(radius);
+                _writer?.Write(color);
+            }
         }
 
         public void WriteEntityMesh(Entity entity, int frame, string category, Point[] verts, Color color)
         {
-            WriteEntityHeader(BlockType.EntityMesh, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(verts.Length);
-            foreach (var vert in verts)
+            lock (this)
             {
-                _writer?.Write(vert);
+                WriteEntityHeader(BlockType.EntityMesh, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(verts.Length);
+                foreach (var vert in verts)
+                {
+                    _writer?.Write(vert);
+                }
+                _writer?.Write(color);
             }
-            _writer?.Write(color);
         }
 
         public void WriteEntityBox(Entity entity, int frame, string category, Transform xform, Point dimensions, Color color)
         {
-            WriteEntityHeader(BlockType.EntityMesh, entity, frame);
-            _writer?.Write(category);
-            _writer?.Write(xform);
-            _writer?.Write(dimensions);
-            _writer?.Write(color);
+            lock (this)
+            {
+                WriteEntityHeader(BlockType.EntityMesh, entity, frame);
+                _writer?.Write(category);
+                _writer?.Write(xform);
+                _writer?.Write(dimensions);
+                _writer?.Write(color);
+            }
         }
     }
 
