@@ -269,7 +269,7 @@ namespace ReplayCapture
             public Point Dimensions => p2;
             public double Radius => scale;
 
-            public bool IsCreationDraw => entity != null && (entity as EntityEx).RegistrationFrame == frame && string.IsNullOrEmpty(category);
+            public bool IsCreationDraw => entity != null && ((entity as EntityEx).RegistrationFrame == frame || (entity as EntityEx).CreationFrame == frame) && string.IsNullOrEmpty(category);
         }
         public FrameStampedList<EntityDrawCommand> DrawCommands { get; private set; } = new();
 
@@ -389,9 +389,11 @@ namespace ReplayCapture
                                 {
                                     string category = reader.ReadString();
                                     string msg = reader.ReadString();
-                                    msg = msg.Replace('\n','|'); // newlines stripped
+                                    msg = msg.Replace('\r',' '); // newlines stripped
+                                    msg = msg.Replace('\n',' '); // newlines stripped
                                     reader.Read(out Color color);
                                     entity.HasLogs = true;
+                                    entity.HasLogsPastFirstFrame |= frame > entity.CreationFrame;
                                     LogEntries.Add(frame, (entity, category, msg, color));
                                 }
                                 break;
@@ -491,6 +493,7 @@ namespace ReplayCapture
         public int RegistrationFrame;
         public bool HasTransforms;
         public bool HasLogs;
+        public bool HasLogsPastFirstFrame;
         public bool HasDraws;
         public bool HasMesh;
         public bool HasParameters;

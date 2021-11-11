@@ -310,8 +310,8 @@ namespace VisualReplayDebugger
             {
                 foreach (var entity in Replay.Entities)
                 {
-                    int creationFrame = Replay.GetEntityLifeTime(entity).Start;
-                    var creationDrawCommands = Replay.DrawCommands.AtFrame(creationFrame).Where(x=>x.entity == entity && x.IsCreationDraw);
+                    var creationDrawCommands = Replay.DrawCommands.AtFrame(entity.CreationFrame).Where(x=>x.entity == entity && x.IsCreationDraw)
+                        .Concat(Replay.DrawCommands.AtFrame(entity.RegistrationFrame).Where(x => x.entity == entity && x.IsCreationDraw));
                     foreach (var creationDrawCommand in creationDrawCommands)
                     {
                         var drawXform = creationDrawCommand.xform.ToTransform3D();

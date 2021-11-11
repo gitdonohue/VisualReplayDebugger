@@ -87,7 +87,7 @@ namespace VisualReplayDebugger
                 var search = new SearchContext(SearchText.Value);
                 foreach (var entity in replay.Entities)
                 {
-                    if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogs & !entity.HasMesh) continue;
+                    if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
                     if (!search.Match(entity.Path)) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));
