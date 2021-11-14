@@ -54,7 +54,7 @@ namespace VisualReplayDebugger
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
         private List<Entity> LockedSelection = new();
 
-
+        VisualReplayDebugger.ReplayControls.TimelineMouseControlHandler MouseHandler;
 
         public ReplayGraphView(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset, ColorProvider colorprovider)
         {
@@ -72,10 +72,11 @@ namespace VisualReplayDebugger
             GraphsStackedByParameter.Changed += RequestFullRedraw;
             GraphsStackedByParameterDepth.Changed += RequestFullRedraw;
 
-            this.MouseDown += OnMouseDown;
-            this.MouseUp += OnMouseUp;
-            this.MouseMove += OnMouseMove;
-            this.MouseWheel += OnMouseWheel;
+            MouseHandler = new(TimelineWindow, this, windowMode:false);
+            this.MouseDown += MouseHandler.OnMouseDown;
+            this.MouseUp += MouseHandler.OnMouseUp;
+            this.MouseMove += MouseHandler.OnMouseMove;
+            this.MouseWheel += MouseHandler.OnMouseWheel;
 
             this.SizeChanged += OnSizeChanged;
 
@@ -131,110 +132,6 @@ namespace VisualReplayDebugger
                 }
             }
         }
-
-        #region mouse handling
-
-        double CursorUnitPos
-        {
-            get => TimelineWindow?.Timeline?.Cursor ?? 0;
-            set
-            {
-                if (TimelineWindow?.Timeline != null)
-                {
-                    TimelineWindow.Timeline.Cursor = value;
-                }
-            }
-        }
-
-        double CursorRatio => TimelineWindow != null ? ((TimelineWindow.Range > 0) ? ((CursorUnitPos - TimelineWindow.Start) / TimelineWindow.Range) : 0) : 0;
-
-        bool IsScrollActive;
-        bool IsScrubActive;
-        bool MouseDidMove;
-        System.Windows.Point MouseLastPos;
-        private void OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).CaptureMouse();
-            MouseLastPos = e.GetPosition(this);
-            MouseDidMove = false;
-
-            if (TimelineWindow != null)
-            {
-                double cursorPixelXPos = CursorRatio * ActualWidth;
-                if (Math.Abs(cursorPixelXPos - MouseLastPos.X) < 10)
-                {
-                    IsScrubActive = true;
-                }
-                else
-                {
-                    IsScrollActive = true;
-                }
-            }
-        }
-
-        private void OnMouseLeave(object sender, MouseEventArgs e)
-        {
-            //IsScrubActive = false;
-            //IsScrollActive = false;
-        }
-
-        private void OnMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).ReleaseMouseCapture();
-
-            if (!IsScrubActive && !MouseDidMove)
-            {
-                // Move cursor to position
-                double mouseUnitPos = TimelineWindow.Start + MouseLastPos.X * TimelineWindow.Range / ActualWidth;
-                CursorUnitPos = mouseUnitPos;
-                SetDirty();
-            }
-
-            IsScrollActive = false;
-            IsScrubActive = false;
-        }
-        private void OnMouseMove(object sender, MouseEventArgs e)
-        {
-            System.Windows.Point scroll = e.GetPosition(this);
-
-            // Clamp to control
-            if (scroll.X < 0) { scroll.X = 0; }
-            if (scroll.X > ActualWidth) { scroll.X = ActualWidth; }
-
-            var delta = scroll - MouseLastPos;
-            MouseLastPos = scroll;
-
-            if (Math.Abs(delta.X) > 0)
-            {
-                MouseDidMove = true;
-            }
-
-            if (TimelineWindow != null)
-            {
-                if (IsScrollActive)
-                {
-                    double offset = -delta.X * TimelineWindow.Range / ActualWidth;
-                    TimelineWindow.SlideWindow(offset);
-                }
-                else if (IsScrubActive)
-                {
-                    double mouseUnitPos = TimelineWindow.Start + MouseLastPos.X * TimelineWindow.Range / ActualWidth;
-                    CursorUnitPos = mouseUnitPos;
-                    SetDirty();
-                }
-            }
-        }
-
-        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (TimelineWindow != null)
-            {
-                double zoomFactor = 1.0 + e.Delta * 0.0005f;
-                double zoomAboutPos = TimelineWindow.Start + (TimelineWindow.Range * e.GetPosition(this).X / ActualWidth);
-                TimelineWindow?.ScaleWindow(zoomFactor, zoomAboutPos);
-            }
-        }
-        #endregion //mouse handling
 
         #region drawing
 

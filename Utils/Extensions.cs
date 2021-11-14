@@ -71,7 +71,9 @@ namespace VisualReplayDebugger
         }
 
         public static System.Windows.Point WithX(this System.Windows.Point p, double x) => new System.Windows.Point(x, p.Y);
+        public static System.Windows.Point WithXOffset(this System.Windows.Point p, double x) => new System.Windows.Point(p.X + x, p.Y);
         public static System.Windows.Point WithY(this System.Windows.Point p, double y) => new System.Windows.Point(p.X, y);
+        public static System.Windows.Point WithYOffset(this System.Windows.Point p, double y) => new System.Windows.Point(p.X, p.Y + y);
         public static System.Windows.Media.Color WithAlpha(this System.Windows.Media.Color c, byte alpha) => System.Windows.Media.Color.FromArgb(alpha, c.R, c.G, c.B);
         public static System.Windows.Media.Color WithAlpha(this System.Windows.Media.Color c, double alpha) => c.WithAlpha((byte)(alpha * 0xFF));
         public static SolidColorBrush WithAlpha(this SolidColorBrush b, byte alpha) => new SolidColorBrush(b.Color.WithAlpha(alpha));

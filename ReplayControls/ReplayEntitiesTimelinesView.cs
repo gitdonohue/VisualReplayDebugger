@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Timeline;
+using TimelineControls;
 using WatchedVariable;
 
 namespace VisualReplayDebugger
@@ -41,6 +42,19 @@ namespace VisualReplayDebugger
 
         public SelectionGroup<Entity> VisibleEntities { get; private set; }
 
+        // Mouse handler derived to handle offset
+        public class TimelineMouseControlHandlerEx : ReplayControls.TimelineMouseControlHandler
+        {
+            private ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
+            public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView) : base(timelineWindow,null) 
+            {
+                ReplayEntitiesTimelinesView = replayEntitiesTimelinesView;
+            }
+            public override double ControlWidth => ReplayEntitiesTimelinesView.TimelineBarWidth;
+            public override System.Windows.Point MousePos(MouseEventArgs e) => e.GetPosition(ReplayEntitiesTimelinesView).WithXOffset(-ReplayEntitiesTimelinesView.TimelineBarOffset - 8);
+        }
+        TimelineMouseControlHandlerEx MouseHandler;
+
         public ReplayEntitiesTimelinesView(ITimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> visibleset, ReplayCaptureReader replay)
         {
             TimelineWindow = timelineWindow;
@@ -68,12 +82,13 @@ namespace VisualReplayDebugger
             TimelineEntityCategoryFilter.Changed += Rebuild;
             ShowAllEntities.Changed += Rebuild;
 
+            MouseHandler = new TimelineMouseControlHandlerEx(TimelineWindow, this);
+            this.MouseDown += MouseHandler.OnMouseDown;
+            this.MouseUp += MouseHandler.OnMouseUp;
+            this.MouseMove += MouseHandler.OnMouseMove;
+            this.MouseWheel += MouseHandler.OnMouseWheel;
+
             this.MouseDoubleClick += (o, e) => DoubleClicked?.Invoke();
-            this.MouseDown += OnMouseDown;
-            this.MouseUp += OnMouseUp;
-            this.MouseMove += OnMouseMove;
-            this.MouseEnter += OnMouseEnter;
-            this.MouseLeave += OnMouseLeave;
 
             Replay = replay;
         }
@@ -95,116 +110,12 @@ namespace VisualReplayDebugger
             }
         }
 
-
-        #region mouse handling
-
-        private void OnMouseEnter(object sender, MouseEventArgs e)
-        {
-            //((UIElement)e.Source).CaptureMouse();
-        }
-
-        private void OnMouseLeave(object sender, MouseEventArgs e)
-        {
-            //IsScrollActive = false;
-            //IsScrubActive = false;
-        }
-
-        double CursorUnitPos
-        {
-            get => TimelineWindow?.Timeline?.Cursor ?? 0;
-            set
-            {
-                if (TimelineWindow?.Timeline != null)
-                {
-                    TimelineWindow.Timeline.Cursor = value;
-                }
-            }
-        }
-
-        double CursorRatio => TimelineWindow != null ? ((TimelineWindow.Timeline.Range > 0) ? ((CursorUnitPos - TimelineWindow.Timeline.Start) / TimelineWindow.Timeline.Range) : 0) : 0;
-
-        bool IsScrollActive;
-        bool IsScrubActive;
-        bool MouseDidMove;
-        double MouseLastPosX;
-
         double TimelineBarOffset => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel).TimelineOffset : 0;
         double TimelineBarWidth => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel).TimelineWidth : ActualWidth;
-        double MouseTimelinePos(MouseEventArgs e) => e.GetPosition(this).X - TimelineBarOffset - 8;
-
-        private void OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).CaptureMouse();
-            MouseLastPosX = MouseTimelinePos(e);
-            MouseDidMove = false;
-
-            if (TimelineWindow != null)
-            {
-                double cursorPixelXPos = CursorRatio * TimelineBarWidth;
-                if (Math.Abs(cursorPixelXPos - MouseLastPosX) < 10)
-                {
-                    IsScrubActive = true;
-                }
-                else
-                {
-                    IsScrollActive = true;
-                }
-            }
-        }
 
         public void OnChildMouseDown(object sender, MouseButtonEventArgs e)
         {
-            OnMouseDown(sender, e);
+            MouseHandler.OnMouseDown(sender, e);
         }
-
-        private void OnMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).ReleaseMouseCapture();
-
-            if (!IsScrubActive && !MouseDidMove)
-            {
-                // Move cursor to position
-                double mouseUnitPos = TimelineWindow.Timeline.Start + TimelineWindow.Timeline.Range * MouseLastPosX / TimelineBarWidth;
-                CursorUnitPos = mouseUnitPos;
-            }
-
-            IsScrollActive = false;
-            IsScrubActive = false;
-        }
-
-        private void OnMouseMove(object sender, MouseEventArgs e)
-        {
-            if (this.Items.Count == 0) return;
-            
-            double scrollX = MouseTimelinePos(e);
-
-            // Clamp to control
-            if (scrollX < 0) { scrollX = 0; }
-            if (scrollX > TimelineBarWidth) { scrollX = TimelineBarWidth; }
-
-            var deltaX = scrollX - MouseLastPosX;
-            MouseLastPosX = scrollX;
-
-            if (Math.Abs(deltaX) > 0)
-            {
-                MouseDidMove = true;
-            }
-
-            if (TimelineWindow != null)
-            {
-                if (IsScrollActive)
-                {
-                    double offset = deltaX * TimelineWindow.Timeline.Range / TimelineBarWidth;
-                    TimelineWindow.SlideWindow(offset);
-                }
-                else if (IsScrubActive)
-                {
-                    double mouseUnitPos = TimelineWindow.Timeline.Start + MouseLastPosX * TimelineWindow.Timeline.Range / TimelineBarWidth;
-                    CursorUnitPos = mouseUnitPos;
-                }
-            }
-        }
-        #endregion //mouse handling
-
     }
 }

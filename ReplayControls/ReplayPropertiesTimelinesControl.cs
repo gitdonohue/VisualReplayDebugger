@@ -47,6 +47,8 @@ namespace VisualReplayDebugger
             }
         }
 
+        VisualReplayDebugger.ReplayControls.TimelineMouseControlHandler MouseHandler;
+
         public ReplayPropertiesTimelinesControl(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset, ColorProvider colorProvider)
         {
             TimelineWindow = timeLineWindow;
@@ -62,12 +64,16 @@ namespace VisualReplayDebugger
             StackedByParameterDepth.Changed += SetDirty;
             SearchText.Changed += SetDirty;
 
-            this.MouseDown += OnMouseDown;
-            this.MouseUp += OnMouseUp;
+
+            MouseHandler = new(TimelineWindow, this, windowMode: false);
+            this.MouseDown += MouseHandler.OnMouseDown;
+            this.MouseUp += MouseHandler.OnMouseUp;
+            this.MouseMove += MouseHandler.OnMouseMove;
+            this.MouseWheel += MouseHandler.OnMouseWheel;
+
             this.MouseMove += OnMouseMove;
             this.MouseDoubleClick += OnMouseDoubleClick;
             this.MouseLeave += OnMouseLeave;
-            this.MouseWheel += OnMouseWheel;
 
             this.ToolTip = new TextBlock() {};
         }
@@ -397,7 +403,7 @@ namespace VisualReplayDebugger
                 DrawChannels.Add(channel);
             }
 
-            _blockUnderMouse = FindBlockAtPos(MouseLastPos);
+            _blockUnderMouse = FindBlockAtPos(MouseHandler.MouseLastPos);
         }
 
         protected override void OnRender(DrawingContext dc)
@@ -539,115 +545,15 @@ namespace VisualReplayDebugger
 
         #region Mouse Handling
 
-        //
-        // TODO: This code is almost exactly the same as for the graphview, it should be shared
-        //
-
-        double CursorUnitPos
-        {
-            get => TimelineWindow?.Timeline?.Cursor ?? 0;
-            set
-            {
-                if (TimelineWindow?.Timeline != null)
-                {
-                    TimelineWindow.Timeline.Cursor = value;
-                }
-            }
-        }
-
-        double CursorRatio => TimelineWindow != null ? ((TimelineWindow.Range > 0) ? ((CursorUnitPos - TimelineWindow.Start) / TimelineWindow.Range) : 0) : 0;
-
-        bool IsScrollActive;
-        bool IsScrubActive;
-        bool MouseDidMove;
-        System.Windows.Point MouseLastPos;
-        private void OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).CaptureMouse();
-            MouseLastPos = e.GetPosition(this);
-            MouseDidMove = false;
-
-            if (TimelineWindow != null)
-            {
-                double cursorPixelXPos = CursorRatio * ActualWidth;
-                if (Math.Abs(cursorPixelXPos - MouseLastPos.X) < 10)
-                {
-                    IsScrubActive = true;
-                }
-                else
-                {
-                    IsScrollActive = true;
-                }
-            }
-        }
-
         private void OnMouseLeave(object sender, MouseEventArgs e)
         {
-            //IsScrubActive = false;
-            //IsScrollActive = false;
-            MouseLastPos = new System.Windows.Point();
             BlockUnderMouse = null;
         }
 
-        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (TimelineWindow != null)
-            {
-                double zoomFactor = 1.0 + e.Delta * 0.0005f;
-                double zoomAboutPos = TimelineWindow.Start + (TimelineWindow.Range * e.GetPosition(this).X / ActualWidth);
-                TimelineWindow?.ScaleWindow(zoomFactor, zoomAboutPos);
-            }
-            e.Handled = true;
-        }
-
-        private void OnMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            ((UIElement)e.Source).ReleaseMouseCapture();
-
-            if (!IsScrubActive && !MouseDidMove)
-            {
-                // Move cursor to position
-                double mouseUnitPos = TimelineWindow.Start + MouseLastPos.X * TimelineWindow.Range / ActualWidth;
-                CursorUnitPos = mouseUnitPos;
-                SetDirty();
-            }
-
-            IsScrollActive = false;
-            IsScrubActive = false;
-        }
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
-            System.Windows.Point scroll = e.GetPosition(this);
-
-            // Clamp to control
-            if (scroll.X < 0) { scroll.X = 0; }
-            if (scroll.X > ActualWidth) { scroll.X = ActualWidth; }
-
-            var delta = scroll - MouseLastPos;
-            MouseLastPos = scroll;
-
-            BlockUnderMouse = FindBlockAtPos(MouseLastPos);
+            BlockUnderMouse = FindBlockAtPos(e.GetPosition(this));
             RefreshTooltipText();
-
-            if (Math.Abs(delta.X) > 0)
-            {
-                MouseDidMove = true;
-            }
-
-            if (TimelineWindow != null)
-            {
-                if (IsScrollActive)
-                {
-                    double offset = -delta.X * TimelineWindow.Range / ActualWidth;
-                    TimelineWindow.SlideWindow(offset);
-                }
-                else if (IsScrubActive)
-                {
-                    double mouseUnitPos = TimelineWindow.Start + MouseLastPos.X * TimelineWindow.Range / ActualWidth;
-                    CursorUnitPos = mouseUnitPos;
-                    SetDirty();
-                }
-            }
         }
 
         private void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
