@@ -256,14 +256,25 @@ namespace VisualReplayDebugger
 
             if (Replay == null) return;
 
+            var currentFrameHighlightColor = Colors.LightBlue;
+            var currentFrameHighlightBrush = new LinearGradientBrush(currentFrameHighlightColor, currentFrameHighlightColor.WithAlpha(0), new System.Windows.Point(0, 0), new System.Windows.Point(0.25, 0));
+
             System.Windows.Point drawpos = new();
             drawpos.X = 4; // Don't start right at edge
             drawpos.Y = 0;
+            int currentFrame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
             int lineNum = 1;
             foreach (var line in ActiveLogs)
             {
                 if (drawpos.Y >= (VerticalOffset - LineHeight))
                 {
+                    // Highlight current frame
+                    if (line.frame == currentFrame)
+                    {
+                        var r = new Rect(drawpos, new Size(ActualWidth, LineHeight));
+                        dc.DrawRectangle(currentFrameHighlightBrush, null, r);
+                    }
+
                     var headerText = new FormattedText($"{lineNum} {line.logHeader}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, Brushes.Black, PIXELS_DPI);
                     dc.DrawText(headerText, drawpos);
 
