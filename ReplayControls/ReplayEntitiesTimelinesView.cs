@@ -104,7 +104,7 @@ namespace VisualReplayDebugger
                 {
                     if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
-                    if (!search.Match(entity.Path)) continue;
+                    if (!search.Empty && !(search.Match(entity.Name) || search.Match(entity.Path)) ) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));
                 }
             }

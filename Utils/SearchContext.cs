@@ -12,9 +12,15 @@ namespace VisualReplayDebugger
         string SearchString;
         bool CaseInsensitive;
         Regex Rx;
+        bool EmptySearchMatch;
+        bool EmptyInputMatch;
 
-        public SearchContext(string searchString, bool caseInsensitive = true)
+        public bool Empty => Rx == null && string.IsNullOrEmpty(SearchString);
+
+        public SearchContext(string searchString, bool caseInsensitive = true, bool emptySearchMatches = false, bool emptyInputMatches = false)
         {
+            EmptySearchMatch = emptySearchMatches;
+            EmptyInputMatch = emptyInputMatches;
             if (!string.IsNullOrEmpty(searchString))
             {
                 RegexOptions opts = RegexOptions.Compiled;
@@ -39,8 +45,8 @@ namespace VisualReplayDebugger
 
         public bool Match(string text)
         {
-            if (string.IsNullOrEmpty(text)) return false;
-            if (string.IsNullOrEmpty(SearchString)) return true;
+            if (string.IsNullOrEmpty(text)) return EmptyInputMatch;
+            if (string.IsNullOrEmpty(SearchString)) return EmptySearchMatch;
 
             if (Rx != null)
             {
