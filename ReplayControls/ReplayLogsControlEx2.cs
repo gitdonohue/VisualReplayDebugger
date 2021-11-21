@@ -276,7 +276,7 @@ namespace VisualReplayDebugger
                     // Highlight current frame
                     if (line.frame == currentFrame)
                     {
-                        var r = new Rect(drawpos, new Size(ActualWidth, LineHeight));
+                        var r = new Rect(drawpos.WithX(0), new Size(ActualWidth, LineHeight));
                         dc.DrawRectangle(currentFrameHighlightBrush, null, r);
                     }
 
@@ -288,13 +288,31 @@ namespace VisualReplayDebugger
                     var logText = new FormattedText(line.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, line.color.ToBrush(), PIXELS_DPI);
                     dc.DrawText(logText, logDrawPos);
                 }
-                if (drawpos.Y > (VerticalOffset+ViewportHeight))
+                if (drawpos.Y > (VerticalOffset + ViewportHeight))
                 {
                     break;
                 }
 
                 drawpos.Y += LineHeight;
                 ++lineNum;
+            }
+
+            // Draw ranges next to scroll bar
+            int scrollRefWidth = 5;
+            var scrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, 0), new Size(scrollRefWidth, ActualHeight));
+            dc.DrawRectangle(Brushes.LightGray, null, scrollRef);
+
+            int numLines = ActiveLogs.Count;
+            if (numLines > 0)
+            {
+                int startLine = ActiveLogs.FindIndex(x => x.frame == currentFrame);
+                int endline = ActiveLogs.FindLastIndex(x => x.frame == currentFrame);
+                int lineCount = endline - startLine + 1;
+
+                double startPos = VerticalOffset + ViewportHeight * startLine / numLines;
+                double h = Math.Max(2, ViewportHeight * lineCount / numLines);
+                var currentFrameScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, startPos), new Size(scrollRefWidth, h));
+                dc.DrawRectangle(Brushes.Red, null, currentFrameScrollRef);
             }
         }
     }
