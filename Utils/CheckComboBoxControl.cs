@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ namespace VisualReplayDebugger
             this.StaysOpenOnEdit = true; // Does not work
             this.IsEditable = true;
             this.Text = label;
+            this.IsReadOnly = true;
 
             this.DropDownClosed += (o,e) => { this.Text = label; }; // Forces label
         }
@@ -44,6 +46,7 @@ namespace VisualReplayDebugger
             {
                 cbi.Click -= Cbi_Click;
             }
+            this.Items.Clear();
         }
 
         private void Cbi_Click(object sender, System.Windows.RoutedEventArgs e)
