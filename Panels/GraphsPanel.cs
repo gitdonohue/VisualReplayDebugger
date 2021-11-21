@@ -39,6 +39,10 @@ namespace VisualReplayDebugger.Panels
             showStackedByParameterDepth.BindTo(graphView.GraphsStackedByParameterDepth);
             ToolBar.Items.Add(showStackedByParameterDepth);
 
+            var autoScale = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.ArrowsV), ToolTip = "Autoscale" };
+            autoScale.BindTo(graphView.Autoscale);
+            ToolBar.Items.Add(autoScale);
+
             ToolBar.Items.Add(new Separator());
 
             var lockEntitySelection = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };

@@ -47,6 +47,7 @@ namespace VisualReplayDebugger
         public WatchedBool GraphsStackedByEntity { get; } = new(true);
         public WatchedBool GraphsStackedByParameter { get; } = new(false);
         public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
+        public WatchedBool Autoscale { get; } = new(true);
 
         private static System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
         private static Typeface TextTypeface = new Typeface("Arial");
@@ -71,6 +72,7 @@ namespace VisualReplayDebugger
             GraphsStackedByEntity.Changed += RequestFullRedraw;
             GraphsStackedByParameter.Changed += RequestFullRedraw;
             GraphsStackedByParameterDepth.Changed += RequestFullRedraw;
+            Autoscale.Changed += RequestFullRedraw;
 
             MouseHandler = new(TimelineWindow, this, windowMode:false);
             this.MouseDown += MouseHandler.OnMouseDown;
@@ -102,6 +104,9 @@ namespace VisualReplayDebugger
         private Dictionary<Entity, Dictionary<string, List<(double, double)>>> ValueTables = new();
         private Dictionary<Entity, Dictionary<string, double>> MaxValueTables = new();
 
+        private Dictionary<Entity, Dictionary<string, double>> MeanValueTables = new();
+        private Dictionary<Entity, Dictionary<string, double>> StdDevValueTables = new();
+
         void BuildReplayTables()
         {
             ValueTables?.Clear();
@@ -128,6 +133,25 @@ namespace VisualReplayDebugger
                         double v = (value > 1) ? value : 1;
                         if (!maxValuesDict.TryGetValue(label, out double max)) { max = 0; }
                         if (v > max) { maxValuesDict[label] = v; }
+                    }
+                }
+
+                MeanValueTables = new();
+                StdDevValueTables = new();
+                foreach (var entityValues in ValueTables)
+                {
+                    var meanvalues = new Dictionary<string, double>();
+                    MeanValueTables[entityValues.Key] = meanvalues;
+                    var stddevvalues = new Dictionary<string, double>();
+                    StdDevValueTables[entityValues.Key] = stddevvalues;
+                    foreach (var valuestream in entityValues.Value)
+                    {
+                        double sum = valuestream.Value.Sum(x => x.Item2);
+                        double avg = sum / valuestream.Value.Count;
+                        meanvalues[valuestream.Key] = avg;
+
+                        double stddev = Math.Sqrt(valuestream.Value.Sum(x => (x.Item2 - avg)*(x.Item2 - avg)) / valuestream.Value.Count);
+                        stddevvalues[valuestream.Key] = stddev;
                     }
                 }
             }
@@ -262,6 +286,25 @@ namespace VisualReplayDebugger
 
         private Rect Bounds => new Rect(0, 0, ActualWidth, ActualHeight);
 
+        private double GetHighVal(Entity entity, string streamlabel)
+        {
+            double maxVal = MaxValueTables[entity][streamlabel];
+
+            double highVal = maxVal;
+
+            if (Autoscale)
+            {
+                double avg = MeanValueTables[entity][streamlabel];
+                double stddev = StdDevValueTables[entity][streamlabel];
+                if (maxVal > (avg + 3 * stddev))
+                {
+                    highVal = avg + 2 * stddev;
+                }
+            }
+
+            return highVal;
+        }
+
         protected override void OnRender(DrawingContext dc)
         {
             if (Replay == null) return;
@@ -302,11 +345,12 @@ namespace VisualReplayDebugger
                     // Draw label at cursor pos
                     if (inRange && cursorTime >= TimelineWindow.Start && cursorTime <= TimelineWindow.End)
                     {
-                        double maxVal = MaxValueTables[entity][streamlabel];
+                        double highVal = GetHighVal(entity,streamlabel);
+
                         double baselineHeight = rectToFillForParameter.Y + rectToFillForParameter.Height;
                         double valueAtCursor = dataPoints.TakeWhile(x => x.Item1 < cursorTime).LastOrDefault().Item2;
                         double textHeight = 8;
-                        double yPos = baselineHeight - textHeight - (valueAtCursor * (rectToFillForParameter.Height - textHeight) / maxVal);
+                        double yPos = baselineHeight - textHeight - (valueAtCursor * (rectToFillForParameter.Height - textHeight) / highVal);
 
                         var baseColor = ColorProvider.GetLabelColor(streamlabel);
                         var brush = new SolidColorBrush(baseColor);
@@ -433,9 +477,9 @@ namespace VisualReplayDebugger
                     foreach ((string streamlabel, var dataPoints, int entryNum, Rect rectToFillForParameter) in view.EnumerateParameterDrawRegions(entity, rectToFillForEntity))
                     {
                         double baselineHeight = rectToFillForParameter.Y + rectToFillForParameter.Height;
-                        double maxVal = view.MaxValueTables[entity][streamlabel];
+                        double highVal = view.GetHighVal(entity, streamlabel);
 
-                        var _pts = GetRange(dataPoints,t0_,t1_).Select(x => IntoRect(rectToFillForParameter, (x.Item1 - t0) / (t1 - t0), x.Item2 / maxVal));
+                        var _pts = GetRange(dataPoints,t0_,t1_).Select(x => IntoRect(rectToFillForParameter, (x.Item1 - t0) / (t1 - t0), x.Item2 / highVal));
 
                         if (doStep) { _pts = _pts.StepPoints(); }
                         var pts = _pts.ToArray();
