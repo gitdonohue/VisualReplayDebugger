@@ -17,7 +17,7 @@ namespace VisualReplayDebugger
 
         public bool Empty => Rx == null && string.IsNullOrEmpty(SearchString);
 
-        public SearchContext(string searchString, bool caseInsensitive = true, bool emptySearchMatches = false, bool emptyInputMatches = false)
+        public SearchContext(string searchString, bool caseInsensitive = true, bool emptySearchMatches = true, bool emptyInputMatches = true)
         {
             EmptySearchMatch = emptySearchMatches;
             EmptyInputMatch = emptyInputMatches;

@@ -4,7 +4,6 @@ TODO:
 - Documentation
 - Demo (Youtube)
 
-- handle full transforms
 - don't hold left+right keys in the viewport
 
 - improve filters drop-down widgets

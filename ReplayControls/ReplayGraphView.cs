@@ -292,7 +292,7 @@ namespace VisualReplayDebugger
 
             double highVal = maxVal;
 
-            if (Autoscale)
+            if (Autoscale && maxVal > 1)
             {
                 double avg = MeanValueTables[entity][streamlabel];
                 double stddev = StdDevValueTables[entity][streamlabel];
