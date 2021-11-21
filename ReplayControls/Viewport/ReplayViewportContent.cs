@@ -532,13 +532,13 @@ namespace VisualReplayDebugger
                 bool isAlive = Replay.GetEntityLifeTime(entity).InRange(frame);
                 bool isSelected = EntitySelection.SelectionSet.Contains(entity);
 
-                var pos = Replay.GetEntityPosition(entity, frame);
+                var xform = Replay.GetEntityTransform(entity, time);
                 if (EntityModels.TryGetValue(entity, out var geomlist))
                 {
-                    var entityTransform = new TranslateTransform3D() { OffsetX = pos.X, OffsetY = pos.Y, OffsetZ = pos.Z }.Value;
+                    var entityTransform = xform.ToTransform3D();
                     foreach ((Transform3D localXform, ModelVisual3D geom) in geomlist)
                     {
-                        var finalTransform = new MatrixTransform3D(entityTransform * localXform.Value);
+                        var finalTransform = new MatrixTransform3D(localXform.Value * entityTransform.Value);
                         if (geom is MeshElement3D meshgeom)
                         {
                             meshgeom.Visible = isAlive;
@@ -564,7 +564,7 @@ namespace VisualReplayDebugger
 
                 if (isAlive && (ShowAllNames || isSelected))
                 {
-                    DrawLabelRequest?.Invoke(entity.Name, pos.ToPoint(), 12);
+                    DrawLabelRequest?.Invoke(entity.Name, xform.Translation.ToPoint(), 12);
                 }
                 //var text = EntityLabels[entity];
                 //text.Transform = new TranslateTransform3D() { OffsetX = pos.X, OffsetY = pos.Y, OffsetZ = pos.Z };
@@ -572,7 +572,7 @@ namespace VisualReplayDebugger
 
                 if (isAlive)
                 {
-                    DrawCircleRequest?.Invoke(pos.ToPoint(), 8, isSelected ? Colors.Red : Colors.Blue);
+                    DrawCircleRequest?.Invoke(xform.Translation.ToPoint(), 8, isSelected ? Colors.Red : Colors.Blue);
                 }
             }
 
