@@ -87,6 +87,11 @@ namespace VisualReplayDebugger
             throw new NotImplementedException();
         }
 
+        public string GetText()
+        {
+            return string.Join('\n',ActiveLogs.Select(x=> $"{x.logHeader} {x.formattedLog}"));
+        }
+
         private string LogHeaderFormat(int frame, Entity entity, string category, string log) => entity == null ? log : $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) [{entity.Name}] -";
         private string LogFormat(int frame, Entity entity, string category, string log) => log;
 

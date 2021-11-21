@@ -6,7 +6,13 @@
         xmlns:local="clr-namespace:VisualReplayDebugger"
         mc:Ignorable="d"
         Title="Visual Replay Debugger" Height="1000" Width="1800">
+
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Copy" Executed="CopyCommandHandler" />
+    </Window.CommandBindings>
+
     <DockPanel Name="MainDockPanel">
+
         <Menu DockPanel.Dock="Top" Name="MainMenu"/>
         <DockPanel DockPanel.Dock="Top" Name="TimeControlsPanel"/>
         <ToolBarTray Visibility="Collapsed" DockPanel.Dock="Top" Name="MainToolbarTray"/>

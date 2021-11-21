@@ -206,6 +206,11 @@ namespace VisualReplayDebugger
             drawpoints.Add(p2.ToPoint());
         }
 
+        private void DrawCircle(Point center, Point up, double radius, ReplayCapture.Color color)
+        {
+            // TODO
+        }
+
         Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColors = new();
 
         
@@ -465,6 +470,11 @@ namespace VisualReplayDebugger
                         case EntityDrawCommandType.Line:
                             {
                                 DrawLine(cmd.Pos, cmd.EndPoint, cmd.color);
+                            }
+                            break;
+                        case EntityDrawCommandType.Circle:
+                            {
+                                DrawCircle(cmd.Pos, cmd.EndPoint, cmd.Radius, cmd.color);
                             }
                             break;
                         case EntityDrawCommandType.Sphere:

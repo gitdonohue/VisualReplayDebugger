@@ -28,6 +28,7 @@ namespace VisualReplayDebugger
         public WatchedBool Play { get; } = new();        
 
         public event Action FocusOnSelected;
+        public event Action CopyCalled;
 
         internal ReplayCaptureReader Replay;
         internal event Action<ReplayCaptureReader> ReplayChanged;
@@ -294,5 +295,11 @@ namespace VisualReplayDebugger
         }
 
         public void TriggerFocusOnSelected() => FocusOnSelected?.Invoke();
+
+        private void CopyCommandHandler(object sender, ExecutedRoutedEventArgs e)
+        {
+            CopyCalled?.Invoke();
+        }
+
     }
 }

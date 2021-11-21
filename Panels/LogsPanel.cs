@@ -61,6 +61,8 @@ namespace VisualReplayDebugger.Panels
             var duplicatePanel = new Button() { Content = GetIcon(FontAwesomeIcon.LevelUp), ToolTip = "Duplicate Panel" };
             duplicatePanel.Click += (o, e) => mainwindow.DuplicatePanel(mainwindow.LogsWindow);
             ToolBar.Items.Add(duplicatePanel);
+
+            mainwindow.CopyCalled += () => { Clipboard.SetText(replayLogsView.GetText()); };
         }
 
         public void Dispose()
