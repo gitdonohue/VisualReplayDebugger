@@ -354,7 +354,7 @@ namespace VisualReplayDebugger
 
                         var baseColor = ColorProvider.GetLabelColor(streamlabel);
                         var brush = new SolidColorBrush(baseColor);
-                        if (valueAtCursor > double.Epsilon)
+                        if (valueAtCursor > double.Epsilon || GraphsStackedByParameter)
                         {
                             dc.DrawText(
                                // Note: this could be cached

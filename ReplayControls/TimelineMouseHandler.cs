@@ -41,12 +41,14 @@ namespace VisualReplayDebugger.ReplayControls
         public int SelectionMargin => 10;
 
         private bool windowMode;
+        private bool slideWindowWhileScurbbing;
 
-        public TimelineMouseControlHandler(ITimelineWindow timelineWindow, System.Windows.Controls.UserControl control, bool windowMode = true)
+        public TimelineMouseControlHandler(ITimelineWindow timelineWindow, System.Windows.Controls.UserControl control, bool windowMode = true, bool slideWindowWhileScurbbing = true)
         {
             this.timelineWindow = timelineWindow;
             this.control = control;
             this.windowMode = windowMode;
+            this.slideWindowWhileScurbbing = slideWindowWhileScurbbing;
         }
 
         private double MouseUnitPos(double controlPos)
@@ -141,7 +143,7 @@ namespace VisualReplayDebugger.ReplayControls
                 if (MouseScrollMode == MouseScrollModes.CursorScrub)
                 {
                     Timeline.Cursor = MouseUnitPos(MouseLastPos.X);
-                    if (windowMode)
+                    if (windowMode && slideWindowWhileScurbbing)
                     {
                         TimelineWindow.SlideWindow(TimeScale(delta));
                     }

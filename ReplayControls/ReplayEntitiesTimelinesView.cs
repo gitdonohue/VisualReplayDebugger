@@ -46,7 +46,7 @@ namespace VisualReplayDebugger
         public class TimelineMouseControlHandlerEx : ReplayControls.TimelineMouseControlHandler
         {
             private ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
-            public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView) : base(timelineWindow,null) 
+            public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView, bool slideWindowWhileScurbbing) : base(timelineWindow,null, slideWindowWhileScurbbing: slideWindowWhileScurbbing) 
             {
                 ReplayEntitiesTimelinesView = replayEntitiesTimelinesView;
             }
@@ -82,7 +82,7 @@ namespace VisualReplayDebugger
             TimelineEntityCategoryFilter.Changed += Rebuild;
             ShowAllEntities.Changed += Rebuild;
 
-            MouseHandler = new TimelineMouseControlHandlerEx(TimelineWindow, this);
+            MouseHandler = new TimelineMouseControlHandlerEx(TimelineWindow, this, slideWindowWhileScurbbing:false);
             this.MouseDown += MouseHandler.OnMouseDown;
             this.MouseUp += MouseHandler.OnMouseUp;
             this.MouseMove += MouseHandler.OnMouseMove;
