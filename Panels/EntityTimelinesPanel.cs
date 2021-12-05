@@ -24,20 +24,16 @@ namespace VisualReplayDebugger.Panels
             
             mainwindow.ReplayChanged += (replay) => entityTimelineView.Replay = replay;
 
-            var clearSelection = new Button() { Content = GetIcon(FontAwesomeIcon.WindowClose), ToolTip = "Clear selection" };
-            clearSelection.Click += (o, e) => { mainwindow.EntitySelection.Clear(); };
-            ToolBar.Items.Add(clearSelection);
+            var filtertext = new TextBox() { Width = 150 };
+            filtertext.BindTo(entityTimelineView.FilterText);
+            ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
+            ToolBar.Items.Add(filtertext);
 
-            var searchLabel = new Label() { Content = GetIcon(FontAwesomeIcon.QuestionCircleOutline) };
-            ToolBar.Items.Add(searchLabel);
-
-            var searchtext = new TextBox() { Width = 150 };
-            searchtext.BindTo(entityTimelineView.SearchText);
-            ToolBar.Items.Add(searchtext);
-
-            var zoomRange = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowsH), ToolTip = "Set time range to selected" };
-            zoomRange.Click += (o, e) => mainwindow.SetTimeRangeToSelected();
-            ToolBar.Items.Add(zoomRange);
+            var cb = new CheckComboBoxControl("Entity Categories");
+            mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.GetEntityCategories(), true); };
+            cb.Changed += () => entityTimelineView.TimelineEntityCategoryFilter.Set(cb.UnselectedItems);
+            ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
+            ToolBar.Items.Add(cb);
 
             ToolBar.Items.Add(new Separator());
 
@@ -45,10 +41,13 @@ namespace VisualReplayDebugger.Panels
             showAll.BindTo(entityTimelineView.ShowAllEntities);
             ToolBar.Items.Add(showAll);
 
-            var cb = new CheckComboBoxControl("Entity Categories");
-            mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.GetEntityCategories(), true); };
-            cb.Changed += () => entityTimelineView.TimelineEntityCategoryFilter.Set(cb.UnselectedItems);
-            ToolBar.Items.Add(cb);
+            var zoomRange = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowsH), ToolTip = "Set time range to selected" };
+            zoomRange.Click += (o, e) => mainwindow.SetTimeRangeToSelected();
+            ToolBar.Items.Add(zoomRange);
+
+            var clearSelection = new Button() { Content = GetIcon(FontAwesomeIcon.WindowClose), ToolTip = "Clear selection" };
+            clearSelection.Click += (o, e) => { mainwindow.EntitySelection.Clear(); };
+            ToolBar.Items.Add(clearSelection);
         }
 
         public void Dispose()

@@ -18,12 +18,12 @@ namespace VisualReplayDebugger.Panels
             this.Content = drawLogsView;
             mainwindow.ReplayChanged += (replay) => drawLogsView.Replay = replay;
 
-            var searchLabel = new Label() { Content = GetIcon(FontAwesomeIcon.QuestionCircleOutline) };
-            ToolBar.Items.Add(searchLabel);
+            var filterLabel = new Label() { Content = GetIcon(FontAwesomeIcon.Filter) };
+            ToolBar.Items.Add(filterLabel);
 
-            var searchtext = new TextBox() { Width = 150 };
-            searchtext.BindTo(drawLogsView.SearchText);
-            ToolBar.Items.Add(searchtext);
+            var filtertext = new TextBox() { Width = 150 };
+            filtertext.BindTo(drawLogsView.FilterText);
+            ToolBar.Items.Add(filtertext);
 
             var showonlyselectedlogs = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.MousePointer), ToolTip = "Show Logs for selected entities only" };
             showonlyselectedlogs.BindTo(drawLogsView.ShowSelectedLogsOnly);

@@ -20,7 +20,7 @@ namespace VisualReplayDebugger
 
     class ReplayEntitiesTimelinesView : ListView
     {
-        public WatchedVariable<string> SearchText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new();
         public ITimelineWindow TimelineWindow { get; private set; }
         public SelectionGroup<string> TimelineEntityCategoryFilter { get; private set; } = new();
         public WatchedBool ShowAllEntities { get; } = new(false);
@@ -78,7 +78,7 @@ namespace VisualReplayDebugger
                 }
             };
 
-            SearchText.Changed += Rebuild;
+            FilterText.Changed += Rebuild;
             TimelineEntityCategoryFilter.Changed += Rebuild;
             ShowAllEntities.Changed += Rebuild;
 
@@ -99,7 +99,7 @@ namespace VisualReplayDebugger
             this.Items.Clear();
             if (replay != null)
             {
-                var search = new SearchContext(SearchText.Value);
+                var search = new SearchContext(FilterText.Value);
                 foreach (var entity in replay.Entities)
                 {
                     if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;

@@ -19,12 +19,12 @@ namespace VisualReplayDebugger.Panels
 
             mainwindow.ReplayChanged += (replay) => propertiesTimelinesView.Replay = replay;
 
-            var searchLabel = new Label() { Content = GetIcon(FontAwesomeIcon.QuestionCircleOutline) };
-            ToolBar.Items.Add(searchLabel);
+            var filterLabel = new Label() { Content = GetIcon(FontAwesomeIcon.Filter) };
+            ToolBar.Items.Add(filterLabel);
 
-            var searchtext = new TextBox() { Width = 150 };
-            searchtext.BindTo(propertiesTimelinesView.SearchText);
-            ToolBar.Items.Add(searchtext);
+            var filtertext = new TextBox() { Width = 150 };
+            filtertext.BindTo(propertiesTimelinesView.FilterText);
+            ToolBar.Items.Add(filtertext);
 
             var showStackedByParameterDepth = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.SortNumericAsc), ToolTip = "Show stacked by parameter depth" };
             showStackedByParameterDepth.BindTo(propertiesTimelinesView.StackedByParameterDepth);

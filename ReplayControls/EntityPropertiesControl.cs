@@ -16,7 +16,7 @@ namespace VisualReplayDebugger
 {
     class EntityPropertiesControl : TextBox
     {
-        public WatchedVariable<string> SearchText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new();
         public WatchedBool EntitySelectionLocked { get; } = new(false);
         private SelectionGroup<Entity> EntitySelection;
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
@@ -46,7 +46,7 @@ namespace VisualReplayDebugger
             TimelineWindow = timelineWindow;
 
             TimelineWindow.Changed += Refresh;
-            SearchText.Changed += Refresh;
+            FilterText.Changed += Refresh;
             EntitySelectionLocked.Changed += Refresh;
             EntitySelection.Changed += EntitySelection_Changed;
         }
@@ -56,7 +56,7 @@ namespace VisualReplayDebugger
             if (Replay == null) return;
 
             int frame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
-            var search = new SearchContext(SearchText.Value);
+            var search = new SearchContext(FilterText.Value);
             var txt = string.Join("\n----------\n",
                 SelectedEntities.Select(x => string.Join('\n', Replay.AllParametersAt(x, frame).Where(s=>search.Match(s.Item1)).Select(s => $"{s.Item1}\t{s.Item2}"))));
             this.Text = txt;

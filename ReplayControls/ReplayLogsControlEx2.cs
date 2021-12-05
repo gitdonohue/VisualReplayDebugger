@@ -21,7 +21,7 @@ namespace VisualReplayDebugger
     // Downside: no selection (for now)
     public class ReplayLogsControlEx2 : UserControl, IDisposable
     {
-        public WatchedVariable<string> SearchText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new();
         public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
         public WatchedBool EntitySelectionLocked { get; } = new(false);
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
@@ -69,7 +69,7 @@ namespace VisualReplayDebugger
             TimelineWindow.Changed += TimelineWindow_Changed;
             EntitySelection.Changed += EntitySelection_Changed;
             EntitySelectionLocked.Changed += RefreshLogs;
-            SearchText.Changed += RefreshLogs;
+            FilterText.Changed += RefreshLogs;
             ShowSelectedLogsOnly.Changed += RefreshLogs;
             LogCategoryFilter.Changed += RefreshLogs;
             LogColorFilter.Changed += RefreshLogs;
@@ -97,7 +97,7 @@ namespace VisualReplayDebugger
 
         IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectSelectedLogs()
         {
-            var search = new SearchContext(SearchText.Value);
+            var search = new SearchContext(FilterText.Value);
             return AllLogs.Where(x => (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
                 && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
                 && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))

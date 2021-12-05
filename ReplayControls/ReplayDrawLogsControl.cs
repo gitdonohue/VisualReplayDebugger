@@ -18,7 +18,7 @@ namespace VisualReplayDebugger
 {
     class ReplayDrawLogsControl : ICSharpCode.AvalonEdit.TextEditor
     {
-        public WatchedVariable<string> SearchText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new();
         public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
         public WatchedBool ShowAllDrawsInRange { get; } = new(false);
 
@@ -50,7 +50,7 @@ namespace VisualReplayDebugger
 
             TimelineWindow.Changed += Refresh;
             EntitySelection.Changed += Refresh;
-            SearchText.Changed += Refresh;
+            FilterText.Changed += Refresh;
             ShowSelectedLogsOnly.Changed += Refresh;
             ShowAllDrawsInRange.Changed += Refresh;
 

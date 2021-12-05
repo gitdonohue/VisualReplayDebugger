@@ -16,7 +16,7 @@ namespace VisualReplayDebugger
 {
     class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
-        public WatchedVariable<string> SearchText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new();
         public WatchedBool EntitySelectionLocked { get; } = new(false);
         private SelectionGroup<Entity> EntitySelection;
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
@@ -62,7 +62,7 @@ namespace VisualReplayDebugger
             EntitySelectionLocked.Changed += SetDirty;
             ParameterFilter.Changed += SetDirty;
             StackedByParameterDepth.Changed += SetDirty;
-            SearchText.Changed += SetDirty;
+            FilterText.Changed += SetDirty;
 
 
             MouseHandler = new(TimelineWindow, this, windowMode: false);
@@ -177,7 +177,7 @@ namespace VisualReplayDebugger
 
         IEnumerable<(Entity, string, List<ReplayCaptureReader.DynamicParamTimeEntry>)> EnumerateSelectedEntitiesPropertiesChannels()
         {
-            var search = new SearchContext(SearchText.Value);
+            var search = new SearchContext(FilterText.Value);
             foreach (var entity in EnumerateSelectedEntitiesWithDynamicProperties())
             {
                 if (Replay.EntityDynamicParams.TryGetValue(entity, out var dict))
