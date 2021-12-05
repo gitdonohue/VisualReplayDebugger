@@ -47,7 +47,7 @@ namespace VisualReplayDebugger
         public WatchedBool GraphsStackedByEntity { get; } = new(true);
         public WatchedBool GraphsStackedByParameter { get; } = new(false);
         public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
-        public WatchedBool Autoscale { get; } = new(true);
+        public WatchedBool Autoscale { get; } = new(false);
 
         private static System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
         private static Typeface TextTypeface = new Typeface("Arial");
