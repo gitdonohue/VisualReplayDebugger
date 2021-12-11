@@ -64,23 +64,12 @@ namespace VisualReplayDebugger
             VideoWindow.Content = new VideoPanel(this); 
 
             // Keyboard Actions
-            RoutedCommand leftCommand = new RoutedCommand();
-            leftCommand.InputGestures.Add(new KeyGesture(Key.Left));
-            CommandBindings.Add(new CommandBinding(leftCommand, (o,e) => stepFrameReverse()));
-
-            RoutedCommand rightCommand = new RoutedCommand();
-            rightCommand.InputGestures.Add(new KeyGesture(Key.Right));
-            CommandBindings.Add(new CommandBinding(rightCommand, (o,e) => stepFrameForward()));
-
             RoutedCommand focusCommand = new RoutedCommand();
             focusCommand.InputGestures.Add(new KeyGesture(Key.F2));
             CommandBindings.Add(new CommandBinding(focusCommand, (o,e) => TriggerFocusOnSelected()));
 
-            string replayPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
-            if (!string.IsNullOrEmpty(replayPath))
-            {
-                LoadReplay(replayPath);
-            }
+            // global keyboard handling
+            EventManager.RegisterClassHandler(typeof(Control), PreviewKeyDownEvent, new RoutedEventHandler(KeyboardHandler));
 
             // Popup on exceptions
             this.Dispatcher.UnhandledException += (o, e) =>
@@ -91,6 +80,29 @@ namespace VisualReplayDebugger
                     e.Handled = true;
                 }
             };
+
+            string replayPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
+            if (!string.IsNullOrEmpty(replayPath))
+            {
+                LoadReplay(replayPath);
+            }
+        }
+
+        internal void KeyboardHandler(object sender, RoutedEventArgs e)
+        {
+            if (e is System.Windows.Input.KeyEventArgs keyArgs)
+            {
+                if (keyArgs.Key == Key.Right) 
+                {
+                    stepFrameForward();
+                    e.Handled = true;
+                }
+                if (keyArgs.Key == Key.Left)
+                {
+                    stepFrameReverse();
+                    e.Handled = true;
+                }
+            }
         }
 
         public static void BuildMainMenu(MainWindow mainWindow)
