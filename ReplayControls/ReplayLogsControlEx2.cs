@@ -22,6 +22,7 @@ namespace VisualReplayDebugger
     public class ReplayLogsControlEx2 : UserControl, IDisposable
     {
         public WatchedVariable<string> FilterText { get; } = new();
+        public WatchedVariable<string> SearchText { get; } = new();
         public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
         public WatchedBool EntitySelectionLocked { get; } = new(false);
         private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
@@ -70,6 +71,7 @@ namespace VisualReplayDebugger
             EntitySelection.Changed += EntitySelection_Changed;
             EntitySelectionLocked.Changed += RefreshLogs;
             FilterText.Changed += RefreshLogs;
+            SearchText.Changed += RefreshLogs;
             ShowSelectedLogsOnly.Changed += RefreshLogs;
             LogCategoryFilter.Changed += RefreshLogs;
             LogColorFilter.Changed += RefreshLogs;
@@ -97,11 +99,11 @@ namespace VisualReplayDebugger
 
         IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectSelectedLogs()
         {
-            var search = new SearchContext(FilterText.Value);
+            var filter = new SearchContext(FilterText.Value);
             return AllLogs.Where(x => (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
                 && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
                 && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
-                && (search.Match(x.logHeader)||search.Match(x.formattedLog))
+                && (filter.Match(x.logHeader)||filter.Match(x.formattedLog))
             );
         }
 
@@ -264,6 +266,11 @@ namespace VisualReplayDebugger
             var currentFrameHighlightColor = Colors.LightBlue;
             var currentFrameHighlightBrush = new LinearGradientBrush(currentFrameHighlightColor, currentFrameHighlightColor.WithAlpha(0), new System.Windows.Point(0, 0), new System.Windows.Point(0.25, 0));
 
+            var normalHighlightBrush = Brushes.LightGray;
+            var searchMatchHighlightBrush = Brushes.White;
+
+            var search = new SearchContext(SearchText.Value);
+
             System.Windows.Point drawpos = new();
             drawpos.X = 4; // Don't start right at edge
             drawpos.Y = 0;
@@ -273,14 +280,22 @@ namespace VisualReplayDebugger
             {
                 if (drawpos.Y >= (VerticalOffset - LineHeight))
                 {
+                    var fullLineRect = new Rect(drawpos.WithX(0), new Size(ActualWidth, LineHeight));
+
+                    var headerText = new FormattedText($"{lineNum} {line.logHeader}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, Brushes.Black, PIXELS_DPI);
+                    
+                    // Darken lines that don't match the search pattern
+                    if (!search.Empty)
+                    {
+                        dc.DrawRectangle(search.Match($"{lineNum} {line.logHeader} {line.formattedLog}") ? searchMatchHighlightBrush : normalHighlightBrush, null, fullLineRect);
+                    }
+
                     // Highlight current frame
                     if (line.frame == currentFrame)
                     {
-                        var r = new Rect(drawpos.WithX(0), new Size(ActualWidth, LineHeight));
-                        dc.DrawRectangle(currentFrameHighlightBrush, null, r);
+                        dc.DrawRectangle(currentFrameHighlightBrush, null, fullLineRect);
                     }
 
-                    var headerText = new FormattedText($"{lineNum} {line.logHeader}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, Brushes.Black, PIXELS_DPI);
                     dc.DrawText(headerText, drawpos);
 
                     var logDrawPos = drawpos;
@@ -311,8 +326,30 @@ namespace VisualReplayDebugger
 
                 double startPos = VerticalOffset + ViewportHeight * startLine / numLines;
                 double h = Math.Max(2, ViewportHeight * lineCount / numLines);
+
+                if (!search.Empty)
+                {
+                    // Darken bar
+                    dc.DrawRectangle(Brushes.Black.WithAlpha(0.5), null, scrollRef);
+
+                    // Lighten lines that match search
+                    double lineHeight = Math.Max(1, ViewportHeight / numLines);
+                    lineNum = 1;
+                    foreach (var line in ActiveLogs)
+                    {
+                        if ( search.Match($"{lineNum} {line.logHeader} {line.formattedLog}") )
+                        {
+                            double lineYPos = VerticalOffset + ViewportHeight * lineNum / numLines;
+                            var currentLineScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, lineYPos), new Size(scrollRefWidth, lineHeight));
+                            dc.DrawRectangle(Brushes.LightGray, null, currentLineScrollRef);
+                        }
+                        ++lineNum;
+                    }
+                }
+
+                // Current page indicator
                 var currentFrameScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, startPos), new Size(scrollRefWidth, h));
-                dc.DrawRectangle(Brushes.Red, null, currentFrameScrollRef);
+                dc.DrawRectangle(Brushes.Red.WithAlpha(0.8), null, currentFrameScrollRef);
             }
         }
     }

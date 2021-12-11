@@ -177,7 +177,7 @@ namespace VisualReplayDebugger
 
         IEnumerable<(Entity, string, List<ReplayCaptureReader.DynamicParamTimeEntry>)> EnumerateSelectedEntitiesPropertiesChannels()
         {
-            var search = new SearchContext(FilterText.Value);
+            var filter = new SearchContext(FilterText.Value);
             foreach (var entity in EnumerateSelectedEntitiesWithDynamicProperties())
             {
                 if (Replay.EntityDynamicParams.TryGetValue(entity, out var dict))
@@ -185,7 +185,7 @@ namespace VisualReplayDebugger
                     foreach((string param, var lst) in dict)
                     {
                         if (!ParameterFilter.Contains(param)
-                            && search.Match(param) )
+                            && filter.Match(param) )
                         {
                             yield return (entity, param, lst);
                         }

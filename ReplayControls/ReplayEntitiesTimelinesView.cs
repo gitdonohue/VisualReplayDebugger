@@ -99,12 +99,12 @@ namespace VisualReplayDebugger
             this.Items.Clear();
             if (replay != null)
             {
-                var search = new SearchContext(FilterText.Value);
+                var filter = new SearchContext(FilterText.Value);
                 foreach (var entity in replay.Entities)
                 {
                     if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
-                    if (!search.Empty && !(search.Match(entity.Name) || search.Match(entity.Path)) ) continue;
+                    if (!filter.Empty && !(filter.Match(entity.Name) || filter.Match(entity.Path)) ) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));
                 }
             }
