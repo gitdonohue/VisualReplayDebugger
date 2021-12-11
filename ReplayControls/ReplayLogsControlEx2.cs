@@ -10,6 +10,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using Timeline;
 using WatchedVariable;
@@ -61,6 +62,9 @@ namespace VisualReplayDebugger
         private SelectionGroup<Entity> EntitySelection;
         private ITimelineWindow TimelineWindow;
 
+        private SelectionSpans SelectionSpans = new();
+        private int LastSelectionIndex = -1;
+
         public ReplayLogsControlEx2(ReplayCaptureReader replay, ITimelineWindow timelineWindow, SelectionGroup<Entity> entitySelection)
         {
             Replay = replay;
@@ -77,7 +81,10 @@ namespace VisualReplayDebugger
             LogColorFilter.Changed += RefreshLogs;
             this.IsVisibleChanged += (o, e) => RefreshLogs();
 
+            this.MouseDown += OnMouseDown;
             this.MouseDoubleClick += OnMouseDoubleClick;
+
+            SelectionSpans.Changed += InvalidateVisual;
 
             // Selected only and selection lock buttons can change their relative states.
             ShowSelectedLogsOnly.Changed += () => { if (!ShowSelectedLogsOnly) { EntitySelectionLocked.Set(false); } };
@@ -154,6 +161,9 @@ namespace VisualReplayDebugger
             ActiveLogs.Clear();
             ActiveLogs.AddRange(CollectLogs());
 
+            SelectionSpans.Clear();
+            LastSelectionIndex = -1;
+
             double h = ActiveLogs.Count * LineHeight;
             if (h < ViewportHeight) h = ViewportHeight;
             this.Height = h;
@@ -206,14 +216,25 @@ namespace VisualReplayDebugger
                 _lastFrame = currentFrame;
             }
 
-            double verticalOffset = lineNumAtCursorFrame * LineHeight - (ViewportHeight-LineHeight);
-            if (!IsJumpingToTime)
-            {
-                //System.Diagnostics.Debug.WriteLine($"Log jump to line {lineNumAtCursorFrame} at {verticalOffset}");
-                if (verticalOffset>=0) ScrollOwner.ScrollToVerticalOffset(verticalOffset);
-            }
-
+            ScrollToLine(lineNumAtCursorFrame);
             RefreshLogs();
+        }
+
+        private void ScrollToLine(int lineNum)
+        {
+            if (IsJumpingToTime) return;
+            
+            double y_min = VerticalOffset;
+            double y_max = y_min + ViewportHeight;
+            double lineYPos = lineNum * LineHeight;
+            if (lineYPos > (y_max - LineHeight))
+            {
+                ScrollOwner.ScrollToVerticalOffset(lineYPos - (ViewportHeight - LineHeight));
+            }
+            else if (lineYPos < y_min)
+            {
+                ScrollOwner.ScrollToVerticalOffset(lineYPos);
+            }
         }
 
         private void EntitySelection_Changed()
@@ -232,6 +253,31 @@ namespace VisualReplayDebugger
             ViewportHeight = scrollViewer.ViewportHeight;
         }
 
+        private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (Replay == null) { return; }
+            double mousePos = e.GetPosition(this).Y;// + VerticalOffset;
+            int lineNum = (int)Math.Floor(mousePos / LineHeight);
+
+            int startRange = lineNum;
+            if ((Keyboard.GetKeyStates(Key.LeftShift) & KeyStates.Down) > 0)
+            {
+                //if (LastSelectionIndex >= 0) startRange = LastSelectionIndex;
+                startRange = (LastSelectionIndex > 0) ? LastSelectionIndex : 0;
+            }
+
+            bool toggle = ((Keyboard.GetKeyStates(Key.LeftCtrl) & KeyStates.Down) > 0);
+            if (toggle)
+            {
+                SelectionSpans.ToggleSelection(startRange, lineNum);
+            }
+            else
+            {
+                SelectionSpans.SetSelection(startRange, lineNum);
+            }
+            LastSelectionIndex = lineNum;
+        }
+
         bool IsJumpingToTime;
         private void OnMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -247,6 +293,30 @@ namespace VisualReplayDebugger
                 IsJumpingToTime = true;
                 TimelineWindow.Timeline.Cursor = t;
                 IsJumpingToTime = false;
+            }
+        }
+
+        public void JumpToNextSearchResult()
+        {
+            var search = new SearchContext(SearchText.Value);
+            var nextSelectedLine = ActiveLogs.Select((item, index) => (item, index)).FirstOrDefault(x => x.index > LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
+            if (nextSelectedLine.index >= 0)
+            {
+                SelectionSpans.SetSelection(nextSelectedLine.index);
+                LastSelectionIndex = nextSelectedLine.index;
+                ScrollToLine(LastSelectionIndex);
+            }
+        }
+
+        public void JumpToPreviousSearchResult()
+        {
+            var search = new SearchContext(SearchText.Value);
+            var previousSelectedLine = ActiveLogs.Select((item, index) => (item, index)).LastOrDefault(x => x.index < LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
+            if (previousSelectedLine.index >= 0)
+            {
+                SelectionSpans.SetSelection(previousSelectedLine.index);
+                LastSelectionIndex = previousSelectedLine.index;
+                ScrollToLine(LastSelectionIndex);
             }
         }
 
@@ -287,7 +357,7 @@ namespace VisualReplayDebugger
                     // Darken lines that don't match the search pattern
                     if (!search.Empty)
                     {
-                        dc.DrawRectangle(search.Match($"{lineNum} {line.logHeader} {line.formattedLog}") ? searchMatchHighlightBrush : normalHighlightBrush, null, fullLineRect);
+                        dc.DrawRectangle(search.Match($"{line.logHeader} {line.formattedLog}") ? searchMatchHighlightBrush : normalHighlightBrush, null, fullLineRect);
                     }
 
                     // Highlight current frame
@@ -310,6 +380,19 @@ namespace VisualReplayDebugger
 
                 drawpos.Y += LineHeight;
                 ++lineNum;
+            }
+
+            // Draw selection outlines
+            if (!SelectionSpans.Empty)
+            {
+                Pen selectionOutlinePen = new Pen(Brushes.Black, 1);
+                selectionOutlinePen.DashStyle = DashStyles.Dash;
+                foreach ((int linestart, int lineEnd) in SelectionSpans.Spans)
+                {
+                    int spanLines = lineEnd - linestart + 1;
+                    var spanRect = new Rect(new System.Windows.Point(4, linestart * LineHeight - 1), new Size(ActualWidth - 12, LineHeight * spanLines));
+                    dc.DrawRoundedRectangle(null, selectionOutlinePen, spanRect, 4, 4);
+                }
             }
 
             // Draw ranges next to scroll bar
@@ -337,7 +420,7 @@ namespace VisualReplayDebugger
                     lineNum = 1;
                     foreach (var line in ActiveLogs)
                     {
-                        if ( search.Match($"{lineNum} {line.logHeader} {line.formattedLog}") )
+                        if ( search.Match($"{line.logHeader} {line.formattedLog}") )
                         {
                             double lineYPos = VerticalOffset + ViewportHeight * lineNum / numLines;
                             var currentLineScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, lineYPos), new Size(scrollRefWidth, lineHeight));
@@ -350,6 +433,17 @@ namespace VisualReplayDebugger
                 // Current page indicator
                 var currentFrameScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, startPos), new Size(scrollRefWidth, h));
                 dc.DrawRectangle(Brushes.Red.WithAlpha(0.8), null, currentFrameScrollRef);
+
+                if (!SelectionSpans.Empty)
+                {
+                    foreach ((int lineStart, int lineEnd) in SelectionSpans.Spans)
+                    {
+                        double lineYPos = VerticalOffset + ViewportHeight * lineStart / numLines;
+                        int spanLines = lineEnd - lineStart + 1;
+                        var spanRect = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, lineYPos), new Size(scrollRefWidth, Math.Max(2, ViewportHeight * spanLines / numLines)));
+                        dc.DrawRectangle(Brushes.Blue, null, spanRect);
+                    }
+                }
             }
         }
     }
