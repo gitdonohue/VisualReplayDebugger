@@ -27,6 +27,10 @@ namespace VisualReplayDebugger.Panels
             replayLogsView.ScrollOwner = this.ScrollViewer;
             this.LayoutUpdated += (o,e) => replayLogsView.ScrollingUpdated(this.ScrollViewer);
 
+            var showonlyselectedlogs = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.MousePointer), ToolTip = "Show Logs for selected entities only" };
+            showonlyselectedlogs.BindTo(replayLogsView.ShowSelectedLogsOnly);
+            ToolBar.Items.Add(showonlyselectedlogs);
+
             var filtertext = new TextBox() { Width = 150 };
             filtertext.BindTo(replayLogsView.FilterText);
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
@@ -46,23 +50,22 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(cb2);
 
-            var showonlyselectedlogs = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.MousePointer), ToolTip = "Show Logs for selected entities only" };
-            showonlyselectedlogs.BindTo(replayLogsView.ShowSelectedLogsOnly);
-            ToolBar.Items.Add(showonlyselectedlogs);
-
             ToolBar.Items.Add(new Separator());
 
             var searchText = new TextBox() { Width = 150 };
             searchText.BindTo(replayLogsView.SearchText);
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Search) });
             ToolBar.Items.Add(searchText);
+            mainwindow.FindCalled += () => searchText.Focus();
 
-            var prev = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowLeft), ToolTip = "Move to previous event" };
+            var prev = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowLeft), ToolTip = "Move to previous event (Shift+F3)" };
             prev.Click += (o, e) => replayLogsView.JumpToPreviousSearchResult();
+            mainwindow.JumpToPrevious += replayLogsView.JumpToPreviousSearchResult;
             ToolBar.Items.Add(prev);
 
-            var next = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowRight), ToolTip = "Move to next event" };
+            var next = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowRight), ToolTip = "Move to next event (F3)" };
             next.Click += (o, e) => replayLogsView.JumpToNextSearchResult();
+            mainwindow.JumpToNext += replayLogsView.JumpToNextSearchResult;
             ToolBar.Items.Add(next);
 
             ToolBar.Items.Add(new Separator());

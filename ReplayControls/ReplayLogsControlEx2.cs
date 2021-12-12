@@ -91,6 +91,11 @@ namespace VisualReplayDebugger
             // Selected only and selection lock buttons can change their relative states.
             ShowSelectedLogsOnly.Changed += () => { if (!ShowSelectedLogsOnly) { EntitySelectionLocked.Set(false); } };
             EntitySelectionLocked.Changed += () => { if (EntitySelectionLocked) { ShowSelectedLogsOnly.Set(true); } };
+
+            // Keyboard Actions
+            RoutedCommand focusCommand = new RoutedCommand();
+            focusCommand.InputGestures.Add(new KeyGesture(Key.F3));
+            CommandBindings.Add(new CommandBinding(focusCommand, (o, e) => JumpToNextSearchResult()));
         }
 
         public void Dispose()

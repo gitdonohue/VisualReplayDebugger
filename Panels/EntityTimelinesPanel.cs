@@ -37,7 +37,7 @@ namespace VisualReplayDebugger.Panels
 
             ToolBar.Items.Add(new Separator());
 
-            var showAll = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show All Entities" };
+            var showAll = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show Hidden Entities" };
             showAll.BindTo(entityTimelineView.ShowAllEntities);
             ToolBar.Items.Add(showAll);
 

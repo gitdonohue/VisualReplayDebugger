@@ -28,6 +28,9 @@ namespace VisualReplayDebugger
         public WatchedBool Play { get; } = new();        
 
         public event Action FocusOnSelected;
+        public event Action JumpToNext;
+        public event Action JumpToPrevious;
+        public event Action FindCalled;
         public event Action CopyCalled;
 
         internal ReplayCaptureReader Replay;
@@ -67,6 +70,18 @@ namespace VisualReplayDebugger
             RoutedCommand focusCommand = new RoutedCommand();
             focusCommand.InputGestures.Add(new KeyGesture(Key.F2));
             CommandBindings.Add(new CommandBinding(focusCommand, (o,e) => TriggerFocusOnSelected()));
+
+            RoutedCommand jumpNextCommand = new RoutedCommand();
+            jumpNextCommand.InputGestures.Add(new KeyGesture(Key.F3));
+            CommandBindings.Add(new CommandBinding(jumpNextCommand, (o, e) => TriggerJumpToNext()));
+
+            RoutedCommand jumpPrevCommand = new RoutedCommand();
+            jumpPrevCommand.InputGestures.Add(new KeyGesture(Key.F3, ModifierKeys.Shift));
+            CommandBindings.Add(new CommandBinding(jumpPrevCommand, (o, e) => TriggerJumpToPrevious()));
+
+            RoutedCommand findCommand = new RoutedCommand();
+            findCommand.InputGestures.Add(new KeyGesture(Key.F, ModifierKeys.Control));
+            CommandBindings.Add(new CommandBinding(findCommand, (o, e) => TriggerFind()));
 
             // global keyboard handling
             EventManager.RegisterClassHandler(typeof(Control), PreviewKeyDownEvent, new RoutedEventHandler(KeyboardHandler));
@@ -324,6 +339,9 @@ namespace VisualReplayDebugger
         }
 
         public void TriggerFocusOnSelected() => FocusOnSelected?.Invoke();
+        public void TriggerJumpToNext() => JumpToNext?.Invoke();
+        public void TriggerJumpToPrevious() => JumpToPrevious?.Invoke();
+        public void TriggerFind() => FindCalled?.Invoke();
 
         private void CopyCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {

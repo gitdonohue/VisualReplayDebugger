@@ -30,7 +30,7 @@ namespace VisualReplayDebugger.Panels
             cam_follow.BindTo(replayViewport3d.FollowCameraEnabled);
             ToolBar.Items.Add(cam_follow);
 
-            var focusOnSelected = new Button() { Content = GetIcon(FontAwesomeIcon.Binoculars), ToolTip = "Focus on selection" };
+            var focusOnSelected = new Button() { Content = GetIcon(FontAwesomeIcon.Binoculars), ToolTip = "Focus on selection (F2)" };
             focusOnSelected.Click += (o, e) => mainwindow.TriggerFocusOnSelected();
             ToolBar.Items.Add(focusOnSelected);
 
