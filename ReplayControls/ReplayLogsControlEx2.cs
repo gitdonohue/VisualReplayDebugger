@@ -75,7 +75,6 @@ namespace VisualReplayDebugger
             EntitySelection.Changed += EntitySelection_Changed;
             EntitySelectionLocked.Changed += RefreshLogs;
             FilterText.Changed += RefreshLogs;
-            SearchText.Changed += RefreshLogs;
             ShowSelectedLogsOnly.Changed += RefreshLogs;
             LogCategoryFilter.Changed += RefreshLogs;
             LogColorFilter.Changed += RefreshLogs;
@@ -85,6 +84,9 @@ namespace VisualReplayDebugger
             this.MouseDoubleClick += OnMouseDoubleClick;
 
             SelectionSpans.Changed += InvalidateVisual;
+
+            SearchText.Changed += RefreshLogs;
+            SearchText.Changed += JumpToNextSearchResult;
 
             // Selected only and selection lock buttons can change their relative states.
             ShowSelectedLogsOnly.Changed += () => { if (!ShowSelectedLogsOnly) { EntitySelectionLocked.Set(false); } };
@@ -202,37 +204,49 @@ namespace VisualReplayDebugger
         int _lastFrame = -1;
         private void TimelineWindow_Changed()
         {
+            RefreshLogs();
+            
             // Auto scrolling
-
             int currentFrame = Replay?.GetFrameForTime(TimelineWindow.Timeline.Cursor) ?? 0;
-            int lineNumAtCursorFrame = 0;
             if (_lastFrame != currentFrame)
             {
+                int lineNumAtCursorFrame = 0;
                 foreach (var log in ActiveLogs)
                 {
-                    if (log.frame > currentFrame) break;
+                    if (_lastFrame < currentFrame)
+                    {
+                        // searching forwards
+                        if (log.frame > currentFrame) break;
+                    }
+                    else
+                    {
+                        // searching backwards
+                        if (log.frame >= currentFrame) break;
+                    }
                     ++lineNumAtCursorFrame;
                 }
+                if (lineNumAtCursorFrame > 0 && (_lastFrame < currentFrame)) { lineNumAtCursorFrame -= 1; }
                 _lastFrame = currentFrame;
+                ScrollToLine(lineNumAtCursorFrame);
             }
-
-            ScrollToLine(lineNumAtCursorFrame);
-            RefreshLogs();
         }
 
-        private void ScrollToLine(int lineNum)
+        private void ScrollToLine(int lineIndex)
         {
+            //System.Diagnostics.Debug.WriteLine($"Scrolling to line: {lineIndex+1}");
             if (IsJumpingToTime) return;
             
             double y_min = VerticalOffset;
             double y_max = y_min + ViewportHeight;
-            double lineYPos = lineNum * LineHeight;
+            double lineYPos = lineIndex * LineHeight;            
             if (lineYPos > (y_max - LineHeight))
             {
-                ScrollOwner.ScrollToVerticalOffset(lineYPos - (ViewportHeight - LineHeight));
+                // Scroll downwards
+                ScrollOwner.ScrollToVerticalOffset(lineYPos - ViewportHeight + LineHeight);
             }
             else if (lineYPos < y_min)
             {
+                // Scoll upwards
                 ScrollOwner.ScrollToVerticalOffset(lineYPos);
             }
         }
@@ -256,8 +270,10 @@ namespace VisualReplayDebugger
         private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (Replay == null) { return; }
-            double mousePos = e.GetPosition(this).Y;// + VerticalOffset;
+            double mousePos = e.GetPosition(this).Y;
             int lineNum = (int)Math.Floor(mousePos / LineHeight);
+
+            //System.Diagnostics.Debug.WriteLine($"Mouse at line:{lineNum}");
 
             int startRange = lineNum;
             if ((Keyboard.GetKeyStates(Key.LeftShift) & KeyStates.Down) > 0)
@@ -278,7 +294,7 @@ namespace VisualReplayDebugger
             LastSelectionIndex = lineNum;
         }
 
-        bool IsJumpingToTime;
+        bool IsJumpingToTime = false;
         private void OnMouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (Replay == null) { return; }
@@ -298,21 +314,31 @@ namespace VisualReplayDebugger
 
         public void JumpToNextSearchResult()
         {
-            var search = new SearchContext(SearchText.Value);
-            var nextSelectedLine = ActiveLogs.Select((item, index) => (item, index)).FirstOrDefault(x => x.index > LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
-            if (nextSelectedLine.index >= 0)
+            if (string.IsNullOrEmpty(SearchText))
             {
-                SelectionSpans.SetSelection(nextSelectedLine.index);
-                LastSelectionIndex = nextSelectedLine.index;
-                ScrollToLine(LastSelectionIndex);
+                LastSelectionIndex = -1;
+                SelectionSpans.Clear();
+                ScrollToLine(0);
             }
+            else
+            {
+                var search = new SearchContext(SearchText.Value);
+                var nextSelectedLine = ActiveLogs.Select((item, index) => (item, index)).FirstOrDefault(x => x.index > LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
+                if (!string.IsNullOrEmpty(nextSelectedLine.item.formattedLog))
+                {
+                    SelectionSpans.SetSelection(nextSelectedLine.index);
+                    LastSelectionIndex = nextSelectedLine.index;
+                    ScrollToLine(LastSelectionIndex);
+                }
+            }
+
         }
 
         public void JumpToPreviousSearchResult()
         {
             var search = new SearchContext(SearchText.Value);
             var previousSelectedLine = ActiveLogs.Select((item, index) => (item, index)).LastOrDefault(x => x.index < LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
-            if (previousSelectedLine.index >= 0)
+            if (!string.IsNullOrEmpty(previousSelectedLine.item.formattedLog))
             {
                 SelectionSpans.SetSelection(previousSelectedLine.index);
                 LastSelectionIndex = previousSelectedLine.index;
@@ -320,7 +346,6 @@ namespace VisualReplayDebugger
             }
         }
 
-        //private Rect Bounds => new Rect(0, 0, ActualWidth, ActualHeight);
         private int LineHeight => 16;
         private int TextMargin => 4;
         private double PIXELS_DPI = 1.25;
