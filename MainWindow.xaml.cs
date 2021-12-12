@@ -71,6 +71,9 @@ namespace VisualReplayDebugger
             // global keyboard handling
             EventManager.RegisterClassHandler(typeof(Control), PreviewKeyDownEvent, new RoutedEventHandler(KeyboardHandler));
 
+            this.AllowDrop = true;
+            EventManager.RegisterClassHandler(typeof(Control), DropEvent, new RoutedEventHandler(DragDropHandler));
+
             // Popup on exceptions
             this.Dispatcher.UnhandledException += (o, e) =>
             {
@@ -85,6 +88,20 @@ namespace VisualReplayDebugger
             if (!string.IsNullOrEmpty(replayPath))
             {
                 LoadReplay(replayPath);
+            }
+        }
+
+        internal void DragDropHandler(object sender, RoutedEventArgs e)
+        {
+            if (e is DragEventArgs dragEvent)
+            {
+                string[] fileList = (string[])dragEvent.Data.GetData(DataFormats.FileDrop, false);
+                if (fileList.Length > 0)
+                {
+                    string fileToLoad = fileList[0];
+                    LoadReplay(fileToLoad);
+                    e.Handled = true;
+                }
             }
         }
 
