@@ -397,7 +397,14 @@ namespace VisualReplayDebugger
             {
                 int entryNum = -1;
                 int entryCount = entityData.Keys.Count;
-                int maxDepth = GraphsStackedByParameterDepth ? entityData.Keys.Select(k => k.Split(SplitSeparators).Count() - 1).Max() : 0;
+
+                int maxDepth = 0;
+                if (GraphsStackedByParameterDepth)
+                {
+                    var keyTokens = entityData.Keys.Select(k => k.Split(SplitSeparators).Count() - 1);
+                    if (keyTokens.Any()) maxDepth = keyTokens.Max();
+                }
+
                 foreach (var datastream in entityData)
                 {
                     ++entryNum;
