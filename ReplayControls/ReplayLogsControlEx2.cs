@@ -80,8 +80,10 @@ namespace VisualReplayDebugger
             LogColorFilter.Changed += RefreshLogs;
             this.IsVisibleChanged += (o, e) => RefreshLogs();
 
-            this.MouseDown += OnMouseDown;
-            this.MouseDoubleClick += OnMouseDoubleClick;
+            //this.MouseDown += OnMouseDown;
+            EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
+            //this.MouseDoubleClick += OnMouseDoubleClick;
+            EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
 
             SelectionSpans.Changed += InvalidateVisual;
 
@@ -272,9 +274,15 @@ namespace VisualReplayDebugger
             ViewportHeight = scrollViewer.ViewportHeight;
         }
 
+        internal void MouseDownHandler(object sender, RoutedEventArgs e)
+        {
+            if (e is MouseButtonEventArgs mb) { OnMouseDown(sender, mb); }
+        }
+
         private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (Replay == null) { return; }
+
             double mousePos = e.GetPosition(this).Y;
             int lineNum = (int)Math.Floor(mousePos / LineHeight);
 
@@ -297,6 +305,12 @@ namespace VisualReplayDebugger
                 SelectionSpans.SetSelection(startRange, lineNum);
             }
             LastSelectionIndex = lineNum;
+        }
+
+
+        internal void MouseDoubleClickHandler(object sender, RoutedEventArgs e)
+        {
+            if (e is MouseButtonEventArgs mb) { OnMouseDoubleClick(sender, mb); }
         }
 
         bool IsJumpingToTime = false;
