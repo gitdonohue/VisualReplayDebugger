@@ -325,7 +325,7 @@ namespace VisualReplayDebugger
         {
             if (Replay != null && !EntitySelection.Empty)
             {
-                int min = Replay.FrameTimes.Count;
+                int min = Replay.FrameTimes.Length;
                 int max = 0;
                 foreach (var entity in EntitySelection.SelectionSet)
                 {

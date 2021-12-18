@@ -2,6 +2,7 @@
 // This code is licensed under MIT license (see LICENSE file for details)
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,42 +23,62 @@ namespace ReplayCapture
             public bool Overlaps(FrameRange other) => (other.Start < this.Start) ? (other.End >= this.Start) : (other.Start <= this.End);
         }
 
-        public class FrameStampedList<T> : List<(int, T)>
+        public class FrameStampedList<T> : IReadOnlyList<(int, T)>
         {
-            public void Add(int frame, T entry)
+            private List<(int, T)> baking_list = new();
+
+            private int[] internal_frames = new int[0];
+            private T[] internal_values = new T[0];
+
+            public void AddForBake(int frame, T entry)
             {
-                // Note: Assumes monotonic increase of frame values.
-                Add((frame, entry));
+                // TODO: Assert that times are monotonic
+                baking_list.Add((frame, entry));
+            }
+
+            public void Bake()
+            {
+                internal_frames = baking_list.Select(x => x.Item1).ToArray();
+                internal_values = baking_list.Select(x => x.Item2).ToArray();
+                baking_list.Clear();
+                baking_list = null;
+            }
+
+            public void Load(IEnumerable<(int,T)> values)
+            {
+                // TODO: Assert that times are monotonic
+                internal_frames = values.Select(x => x.Item1).ToArray();
+                internal_values = values.Select(x => x.Item2).ToArray();
+                baking_list.Clear();
+                baking_list = null;
             }
 
             public int FirstIndexFor(int frame)
             {
-                int len = Count;
-                if (len == 0) return -1;
+                if (Count == 0) return -1;
                 // Note: Could be optimized with a binary search.
                 int index = 0;
-                foreach (var elem in this)
+                for (; index < Count; ++index)
                 {
-                    if (elem.Item1 >= frame) break;
-                    ++index;
+                    if (internal_frames[index] >= frame) break;
                 }
-                return index >= len ? (len - 1) : index;
+                return index >= Count ? (Count - 1) : index;
             }
 
             public T FirstAtFrame(int frame)
             {
                 int index = FirstIndexFor(frame);
-                return (index < 0) ? default(T) : this[index].Item2;
+                return (index < 0) ? default(T) : internal_values[index];
             }
 
             public IEnumerable<(int, T)> SubRange(FrameRange range)
             {
-                foreach (var item in this)
+                for (int index = FirstIndexFor(range.Start); index < internal_frames.Length; ++index)
                 {
-                    int frame = item.Item1;
+                    int frame = internal_frames[index];
                     if (range.InRange(frame))
                     {
-                        yield return item;
+                        yield return (frame, internal_values[index]);
                     }
                     if (frame > range.End) break;
                 }
@@ -65,12 +86,13 @@ namespace ReplayCapture
 
             public IEnumerable<(int, T)> ForFrame(int targetFrame)
             {
-                foreach (var item in this)
+                int index = FirstIndexFor(targetFrame);
+                for (; index >= 0 && index < Count; ++index)
                 {
-                    int frame = item.Item1;
+                    int frame = internal_frames[index];
                     if (frame == targetFrame)
                     {
-                        yield return item;
+                        yield return (frame, internal_values[index]);
                     }
                     if (frame > targetFrame) break;
                 }
@@ -78,7 +100,27 @@ namespace ReplayCapture
 
             public IEnumerable<T> AtFrame(int targetFrame) => ForFrame(targetFrame).Select(x=>x.Item2);
 
-            public IEnumerable<T> AllValues => this.Select(x => x.Item2);
+            public IEnumerator<(int, T)> GetEnumerator()
+            {
+                for (int index = 0; index < Count; ++index)
+                {
+                    yield return this[index];
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                for (int index = 0; index < Count; ++index)
+                {
+                    yield return this[index];
+                }
+            }
+
+            public IEnumerable<T> AllValues => internal_values;
+
+            public int Count => internal_values.Length;
+
+            public (int, T) this[int index] => (internal_frames[index],internal_values[index]);
         }
 
         public class ForDict<K, V> : Dictionary<K, V> where V : class, new()
@@ -95,21 +137,34 @@ namespace ReplayCapture
             }
         }
 
+        public class FrameStampedListDict<T,V> : ForDict<T, FrameStampedList<V>>
+        {
+            public void Bake()
+            {
+                foreach(var fsl in Values)
+                {
+                    fsl.Bake();
+                }
+            }
+        }
+
         public int GetFrameForTime(double t)
         {
             if (t <= 0) return 0;
-            int index = 0;
-            foreach (double time in FrameTimes)
+            int index = FramesForTimes[(int)Math.Abs(t)];
+            for(; index < FrameTimes.Length; ++index)
             {
-                if (time >= t) return (index > 0) ? (index-1) : 0;
-                ++index;
+                if (FrameTimes[index]>=t)
+                {
+                    return (index > 0) ? (index - 1) : 0;
+                }
             }
-            return FrameTimes.Count - 1;
+            return FrameTimes.Length - 1;
         }
 
         public double GetTimeForFrame(int frame)
         {
-            int frameCount = FrameTimes.Count;
+            int frameCount = FrameTimes.Length;
             if (frameCount == 0) return 0;
             if (frame <= 0) return 0;
             if (frame >= frameCount) return FrameTimes[frameCount - 1];
@@ -127,7 +182,7 @@ namespace ReplayCapture
             return currentFrameTime;
         }
 
-        public double TotalTime => FrameTimes[FrameTimes.Count - 1];
+        public double TotalTime => FrameTimes[FrameTimes.Length - 1];
 
         public FrameStampedList<Transform> GetEntityTransforms(Entity entity)
         {
@@ -150,7 +205,7 @@ namespace ReplayCapture
             {
                 return frameRange;
             }
-            return new FrameRange() { Start = entity.CreationFrame, End = FrameTimes.Count - 1 };
+            return new FrameRange() { Start = entity.CreationFrame, End = FrameTimes.Length - 1 };
         }
 
         public IDictionary<string, string> GetDynamicParamsAt(Entity entity, int frame)
@@ -181,7 +236,7 @@ namespace ReplayCapture
 
         private void AddToDynamicPropertiesTable(Entity entity, int frame, string param, string val)
         {
-            EntityDynamicParamsCombined.For(entity)?.Add(frame, (param, val));
+            EntityDynamicParamsCombined.For(entity)?.AddForBake(frame, (param, val));
 
             EntityDynamicParamsNames.Add(param);
 
@@ -240,15 +295,16 @@ namespace ReplayCapture
         public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.Item2.IsCreationDraw).Select(x => x.Item2.category).Distinct();
         public IEnumerable<Color> GetDrawColors() => DrawCommands.Select(x => x.Item2.color).Distinct();
 
-        public List<float> FrameTimes { get; private set; } = new List<float>() { 0 };
+        public float[] FrameTimes { get; private set; } = new float[1];
+        public int[] FramesForTimes { get; private set; } = new int[1];
         public List<EntityEx> Entities { get; private set; } = new();
         public Dictionary<Entity, FrameRange> EntityLifeTimes { get; private set; } = new();
-        private ForDict<Entity, FrameStampedList<Transform>> EntitySetTransforms { get; set; } = new();
+        private FrameStampedListDict<Entity,Transform> EntitySetTransforms { get; set; } = new();
         public FrameStampedList<(Entity, string, string, Color)> LogEntries { get; private set; } = new();
-        public ForDict<Entity, FrameStampedList<(string, string)>> EntityDynamicParamsCombined { get; private set; } = new();
+        public FrameStampedListDict<Entity, (string, string)> EntityDynamicParamsCombined { get; private set; } = new();
         public HashSet<string> EntityDynamicParamsNames { get; private set; } = new();
         public Dictionary<Entity, Dictionary<string, List<DynamicParamTimeEntry>>> EntityDynamicParams { get; private set; } = new();
-        public ForDict<Entity, FrameStampedList<(string, float)>> EntityDynamicValues { get; private set; } = new();
+        public FrameStampedListDict<Entity, (string, float)> EntityDynamicValues { get; private set; } = new();
 
 
         public enum EntityDrawCommandType { None, Line, Circle, Sphere, Box, Capsule, Mesh };
@@ -311,8 +367,12 @@ namespace ReplayCapture
 
         private void LoadCapture(BinaryReaderEx reader)
         {
+            var frametimes = new List<float>() { 0 };
+            var framesForTimes = new List<int>() { 0 };
             try
             {
+
+
                 int blockCount = 0;
                 Dictionary<Entity, Transform> last_xforms = new();
                 while(true)
@@ -330,9 +390,9 @@ namespace ReplayCapture
                     }
                     else if (blockType == BlockType.FrameStep)
                     {
-                        //int frame = reader.ReadInt32();
                         float totalTime = reader.ReadSingle();
-                        FrameTimes.Add(totalTime);
+                        frametimes.Add(totalTime);
+                        if (Math.Abs(totalTime) > framesForTimes.Count) { framesForTimes.Add(frametimes.Count); }
                     }
                     else
                     {
@@ -372,7 +432,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p);
                                     if (!last_xforms.TryGetValue(entity, out Transform xform)) { xform = new Transform(); xform.Rotation.W = 1; }
                                     xform.Translation = p;
-                                    EntitySetTransforms.For(entity)?.Add(frame, xform);
+                                    EntitySetTransforms.For(entity)?.AddForBake(frame, xform);
                                     entity.HasTransforms = true;
                                     last_xforms[entity] = xform;
                                 }
@@ -380,7 +440,7 @@ namespace ReplayCapture
                             case BlockType.EntitySetTransform:
                                 {
                                     reader.Read(out Transform xform);
-                                    EntitySetTransforms.For(entity)?.Add(frame, xform);
+                                    EntitySetTransforms.For(entity)?.AddForBake(frame, xform);
                                     entity.HasTransforms = true;
                                     last_xforms[entity] = xform;
                                 }
@@ -394,7 +454,7 @@ namespace ReplayCapture
                                     reader.Read(out Color color);
                                     entity.HasLogs = true;
                                     entity.HasLogsPastFirstFrame |= frame > entity.CreationFrame;
-                                    LogEntries.Add(frame, (entity, category, msg, color));
+                                    LogEntries.AddForBake(frame, (entity, category, msg, color));
                                 }
                                 break;
                             case BlockType.EntityParameter:
@@ -410,7 +470,7 @@ namespace ReplayCapture
                                     string label = reader.ReadString();
                                     float val = reader.ReadSingle();
                                     entity.HasNumericParameters = true;
-                                    EntityDynamicValues.For(entity)?.Add(frame, (label, val));
+                                    EntityDynamicValues.For(entity)?.AddForBake(frame, (label, val));
                                 }
                                 break;
                             case BlockType.EntityLine:
@@ -420,7 +480,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p2);
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCircle:
@@ -431,7 +491,7 @@ namespace ReplayCapture
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
                                 }
                                 break;
                             case BlockType.EntitySphere:
@@ -441,7 +501,7 @@ namespace ReplayCapture
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityBox:
@@ -451,7 +511,7 @@ namespace ReplayCapture
                                     reader.Read(out Point dimensions);
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCapsule:
@@ -462,7 +522,7 @@ namespace ReplayCapture
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityMesh:
@@ -474,7 +534,7 @@ namespace ReplayCapture
                                     reader.Read(out Color color);
                                     entity.HasDraws = true;
                                     entity.HasMesh = true;
-                                    DrawCommands.Add(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
+                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
                                 }
                                 break;
                         }
@@ -485,6 +545,13 @@ namespace ReplayCapture
             {
                 // EOF
             }
+            this.FrameTimes = frametimes.ToArray();
+            this.FramesForTimes = framesForTimes.ToArray();
+            LogEntries.Bake();
+            DrawCommands.Bake();
+            EntitySetTransforms.Bake();
+            EntityDynamicParamsCombined.Bake();
+            EntityDynamicValues.Bake();
         }
     }
 
