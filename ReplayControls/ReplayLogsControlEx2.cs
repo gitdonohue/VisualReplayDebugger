@@ -43,15 +43,17 @@ namespace VisualReplayDebugger
                 AllLogs.Clear();
                 if (replay != null)
                 {
-                    AllLogs = Replay.LogEntries.Select(x => (x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToList();
+                    AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToList();
                 }
                 EntitySelectionLocked.Set(false);
                 RefreshLogs();
             }
         }
 
-        private List<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> AllLogs = new();
-        private List<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> ActiveLogs = new();
+        record LogEntryRecord(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color);
+
+        private List<LogEntryRecord> AllLogs = new();
+        private List<LogEntryRecord> ActiveLogs = new();
 
         public record TextEntry
         {
@@ -113,25 +115,27 @@ namespace VisualReplayDebugger
         private string LogHeaderFormat(int frame, Entity entity, string category, string log) => entity == null ? log : $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) [{entity.Name}] -";
         private string LogFormat(int frame, Entity entity, string category, string log) => log;
 
-        IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectSelectedLogs()
+        IEnumerable<LogEntryRecord> CollectSelectedLogs(FrameRange windowRange)
         {
             var filter = new SearchContext(FilterText.Value);
-            return AllLogs.Where(x => (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
+            return AllLogs.Where(x => x.frame >= windowRange.Start && x.frame <= windowRange.End && (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
                 && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
                 && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
                 && (filter.Match(x.logHeader)||filter.Match(x.formattedLog))
             );
         }
 
-        private IEnumerable<(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color)> CollectLogs()
+        private IEnumerable<LogEntryRecord> CollectLogs()
         {
             var windowRange = Replay.GetFramesForTimes(TimelineWindow.Start, TimelineWindow.End);
             int currentFrame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
 
-            var currentFrameEntry = (currentFrame, default(Entity), string.Empty, string.Empty, $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(currentFrame))} ({currentFrame})", "------------------------", ReplayCapture.Color.Black );
+            //System.Diagnostics.Debug.WriteLine($"CollectLogs at frame {currentFrame} ({TimelineWindow.Start},{TimelineWindow.End},{TimelineWindow.Timeline.Cursor})");
+
+            var currentFrameEntry = new LogEntryRecord(currentFrame, default(Entity), string.Empty, string.Empty, $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(currentFrame))} ({currentFrame})", "------------------------", ReplayCapture.Color.Black );
 
             bool currentTimeEntryShown = false;
-            foreach (var logEntry in CollectSelectedLogs())
+            foreach (var logEntry in CollectSelectedLogs(windowRange))
             {
                 int frame = logEntry.frame;
                 if (frame < windowRange.Start)

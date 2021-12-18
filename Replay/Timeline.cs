@@ -37,13 +37,13 @@ namespace Timeline
     #region implementations
     public class Timeline : ITimeline
     {
-        public double Start { get => start; set { start = SafeVal(value); if (start >= end) start = end; CallChanged(); } }
+        public double Start { get => start; set { double pre = start; start = SafeVal(value); if (start >= end) start = end; if (start != pre) CallChanged(); } }
         double start = 0;
 
-        public double End { get => end; set { end = SafeVal(value); if (end <= start) end = start; CallChanged(); } }
+        public double End { get => end; set { double pre = end; end = SafeVal(value); if (end <= start) end = start; if (end != pre) CallChanged(); } }
         double end = 1;
 
-        public double Cursor { get => cursor; set { cursor = SafeVal(value); if (cursor < start) cursor = start; if (cursor > end) cursor = end; CallChanged(); } }
+        public double Cursor { get => cursor; set { double pre = cursor; cursor = SafeVal(value); if (cursor < start) cursor = start; if (cursor > end) cursor = end; if (cursor != pre) CallChanged(); } }
         double cursor;
 
         public event Action Changed;
@@ -77,10 +77,10 @@ namespace Timeline
         }
         ITimeline timeline;
 
-        public double Start { get => start; set { start = value; Clamp(); CallChanged(); } }
+        public double Start { get => start; set { double pre = start; start = value; Clamp(); if (start != pre) CallChanged(); } }
         double start;
 
-        public double End { get => end; set { end = value; Clamp(); CallChanged(); } }
+        public double End { get => end; set { double pre = end; end = value; Clamp(); if (end != pre) CallChanged(); } }
         double end = 1;
 
         double Min => Timeline?.Start ?? double.NegativeInfinity;
@@ -115,6 +115,8 @@ namespace Timeline
 
         public void ScaleWindow(double scaleFactor, double center)
         {
+            double preStart = start;
+            double preEnd = end;
             if (scaleFactor > 0 && (end-start) > 1E-6)
             {
                 double d = end - center;
@@ -127,11 +129,13 @@ namespace Timeline
 
             }
             Clamp();
-            CallChanged();
+            if (start != preStart || end != preEnd) CallChanged();
         }
 
         public void SlideWindow(double offset)
         {
+            double preStart = start;
+            double preEnd = end;
             if (offset == 0) return;
             if (offset < 0)
             {
@@ -143,7 +147,7 @@ namespace Timeline
             }
             start += offset;
             end += offset;
-            CallChanged();
+            if (start != preStart || end != preEnd) CallChanged();
         }
     }
 
