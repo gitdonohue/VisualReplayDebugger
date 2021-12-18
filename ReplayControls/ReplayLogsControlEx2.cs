@@ -40,12 +40,14 @@ namespace VisualReplayDebugger
             {
                 replay = value;
                 ActiveLogs.Clear();
+                FilteredLogs.Clear();
                 AllLogs.Clear();
                 if (replay != null)
                 {
                     AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToList();
                 }
                 EntitySelectionLocked.Set(false);
+                RefreshFilteredLogs();
                 RefreshLogs();
             }
         }
@@ -53,6 +55,7 @@ namespace VisualReplayDebugger
         record LogEntryRecord(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color);
 
         private List<LogEntryRecord> AllLogs = new();
+        private List<LogEntryRecord> FilteredLogs = new();
         private List<LogEntryRecord> ActiveLogs = new();
 
         public record TextEntry
@@ -75,21 +78,23 @@ namespace VisualReplayDebugger
 
             TimelineWindow.Changed += TimelineWindow_Changed;
             EntitySelection.Changed += EntitySelection_Changed;
-            EntitySelectionLocked.Changed += RefreshLogs;
-            FilterText.Changed += RefreshLogs;
-            ShowSelectedLogsOnly.Changed += RefreshLogs;
-            LogCategoryFilter.Changed += RefreshLogs;
-            LogColorFilter.Changed += RefreshLogs;
+            
+            EntitySelectionLocked.Changed += RefreshLogsAndFilters;
+            FilterText.Changed += RefreshLogsAndFilters;
+            ShowSelectedLogsOnly.Changed += RefreshLogsAndFilters;
+            LogCategoryFilter.Changed += RefreshLogsAndFilters;
+            LogColorFilter.Changed += RefreshLogsAndFilters;
+            
             this.IsVisibleChanged += (o, e) => RefreshLogs();
 
-            //this.MouseDown += OnMouseDown;
-            EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
-            //this.MouseDoubleClick += OnMouseDoubleClick;
-            EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
+            this.MouseDown += OnMouseDown;
+            //EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
+            this.MouseDoubleClick += OnMouseDoubleClick;
+            //EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
 
-            SelectionSpans.Changed += InvalidateVisual;
+            SelectionSpans.Changed += InvalidateVisualLocal;
 
-            SearchText.Changed += RefreshLogs;
+            SearchText.Changed += RefreshLogsAndFilters;
             SearchText.Changed += JumpToNextSearchResult;
 
             // Selected only and selection lock buttons can change their relative states.
@@ -107,6 +112,12 @@ namespace VisualReplayDebugger
             throw new NotImplementedException();
         }
 
+        private void InvalidateVisualLocal()
+        {
+            System.Diagnostics.Debug.WriteLine("InvalidateVisualLocal");
+            InvalidateVisual();
+        }
+
         public string GetText()
         {
             return string.Join('\n',ActiveLogs.Select(x=> $"{x.logHeader} {x.formattedLog}"));
@@ -115,27 +126,17 @@ namespace VisualReplayDebugger
         private string LogHeaderFormat(int frame, Entity entity, string category, string log) => entity == null ? log : $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) [{entity.Name}] -";
         private string LogFormat(int frame, Entity entity, string category, string log) => log;
 
-        IEnumerable<LogEntryRecord> CollectSelectedLogs(FrameRange windowRange)
-        {
-            var filter = new SearchContext(FilterText.Value);
-            return AllLogs.Where(x => x.frame >= windowRange.Start && x.frame <= windowRange.End && (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
-                && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
-                && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
-                && (filter.Match(x.logHeader)||filter.Match(x.formattedLog))
-            );
-        }
-
         private IEnumerable<LogEntryRecord> CollectLogs()
         {
             var windowRange = Replay.GetFramesForTimes(TimelineWindow.Start, TimelineWindow.End);
             int currentFrame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
 
-            //System.Diagnostics.Debug.WriteLine($"CollectLogs at frame {currentFrame} ({TimelineWindow.Start},{TimelineWindow.End},{TimelineWindow.Timeline.Cursor})");
+            System.Diagnostics.Debug.WriteLine($"CollectLogs at frame {currentFrame} ({TimelineWindow.Start},{TimelineWindow.End},{TimelineWindow.Timeline.Cursor})");
 
             var currentFrameEntry = new LogEntryRecord(currentFrame, default(Entity), string.Empty, string.Empty, $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(currentFrame))} ({currentFrame})", "------------------------", ReplayCapture.Color.Black );
 
             bool currentTimeEntryShown = false;
-            foreach (var logEntry in CollectSelectedLogs(windowRange))
+            foreach (var logEntry in FilteredLogs)
             {
                 int frame = logEntry.frame;
                 if (frame < windowRange.Start)
@@ -166,6 +167,19 @@ namespace VisualReplayDebugger
             }
         }
 
+        public void RefreshFilteredLogs()
+        {
+            if (Replay == null) return;
+
+            FilteredLogs.Clear();
+            var filter = new SearchContext(FilterText.Value);
+            FilteredLogs.AddRange(AllLogs.Where(x => 
+                (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
+                && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
+                && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
+                && (filter.Match(x.logHeader) || filter.Match(x.formattedLog))));
+        }
+
         public void RefreshLogs()
         {
             if (Replay == null) return;
@@ -180,8 +194,10 @@ namespace VisualReplayDebugger
             double h = ActiveLogs.Count * LineHeight;
             if (h < ViewportHeight) h = ViewportHeight;
             this.Height = h;
-            InvalidateVisual();
+            InvalidateVisualLocal();
         }
+
+        public void RefreshLogsAndFilters() { RefreshFilteredLogs(); RefreshLogs(); }
 
         double _viewportHeight = 0;
         double ViewportHeight
@@ -192,7 +208,7 @@ namespace VisualReplayDebugger
                 if (value != _viewportHeight)
                 {
                     _viewportHeight = value;
-                    InvalidateVisual();
+                    InvalidateVisualLocal();
                 }
             }
         }
@@ -206,7 +222,7 @@ namespace VisualReplayDebugger
                 if (value != _verticalOffset)
                 {
                     _verticalOffset = value;
-                    InvalidateVisual();
+                    InvalidateVisualLocal();
                 }
             }
         }
@@ -347,7 +363,7 @@ namespace VisualReplayDebugger
             {
                 var search = new SearchContext(SearchText.Value);
                 var nextSelectedLine = ActiveLogs.Select((item, index) => (item, index)).FirstOrDefault(x => x.index > LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
-                if (!string.IsNullOrEmpty(nextSelectedLine.item.formattedLog))
+                if (!string.IsNullOrEmpty(nextSelectedLine.item?.formattedLog))
                 {
                     SelectionSpans.SetSelection(nextSelectedLine.index);
                     LastSelectionIndex = nextSelectedLine.index;
@@ -378,7 +394,7 @@ namespace VisualReplayDebugger
         protected override void OnRender(DrawingContext dc)
         {
             base.OnRender(dc);
-
+            System.Diagnostics.Debug.WriteLine($"render");
             if (Replay == null) return;
 
             var currentFrameHighlightColor = Colors.LightBlue;
@@ -400,11 +416,13 @@ namespace VisualReplayDebugger
                 {
                     var fullLineRect = new Rect(drawpos.WithX(0), new Size(ActualWidth, LineHeight));
 
+                    // TODO: test if reusing these make a difference
                     var headerText = new FormattedText($"{lineNum} {line.logHeader}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, Brushes.Black, PIXELS_DPI);
                     
                     // Darken lines that don't match the search pattern
                     if (!search.Empty)
                     {
+                        // TODO: Take the search out (although it might be slower for large logs?)
                         dc.DrawRectangle(search.Match($"{line.logHeader} {line.formattedLog}") ? searchMatchHighlightBrush : normalHighlightBrush, null, fullLineRect);
                     }
 
@@ -418,6 +436,8 @@ namespace VisualReplayDebugger
 
                     var logDrawPos = drawpos;
                     logDrawPos.X += headerText.Width + 4;
+
+                    // TODO: test if reusing these make a difference
                     var logText = new FormattedText(line.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, line.color.ToBrush(), PIXELS_DPI);
                     dc.DrawText(logText, logDrawPos);
                 }

@@ -20,15 +20,18 @@ namespace VisualReplayDebugger
         
         public void Clear() 
         { 
-            spans.Clear(); 
-            Changed?.Invoke(); 
+            if (spans.Count > 0)
+            {
+                spans.Clear(); 
+                Changed?.Invoke(); 
+            }
         }
 
         public bool Empty => !spans.Any();
 
         public void SetSelection(int index)
         {
-            Clear();
+            spans.Clear();
             AddSelection(index);
         }
 
@@ -158,7 +161,7 @@ namespace VisualReplayDebugger
 
         public void SetSelection(int start, int end)
         {
-            Clear();
+            spans.Clear();
             AddSelection(start,end);
         }
 
