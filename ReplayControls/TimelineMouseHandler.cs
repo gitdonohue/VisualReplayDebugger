@@ -142,14 +142,14 @@ namespace VisualReplayDebugger.ReplayControls
             {
                 if (MouseScrollMode == MouseScrollModes.CursorScrub)
                 {
-                    Timeline.Cursor = MouseUnitPos(MouseLastPos.X);
                     if (windowMode && slideWindowWhileScurbbing)
                     {
-                        TimelineWindow.SlideWindow(TimeScale(delta));
+                        double t = MouseUnitPos(MouseLastPos.X);
+                        TimelineWindow.SlideWindowAndSetTime(TimeScale(delta),t);
                     }
                     else
                     {
-                        Timeline.Cursor += TimeScale(delta);
+                        Timeline.Cursor = MouseUnitPos(MouseLastPos.X) + TimeScale(delta);
                     }
                 }
                 else if (MouseScrollMode == MouseScrollModes.WindowScrub && TimelineWindow != null)

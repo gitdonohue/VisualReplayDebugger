@@ -1,6 +1,8 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
+//#define VERBOSE
+
 using ReplayCapture;
 using SelectionSet;
 using System;
@@ -19,7 +21,6 @@ using static ReplayCapture.ReplayCaptureReader;
 namespace VisualReplayDebugger
 {
     // Much faster than than AnavlonEdit or VirtualizingStackPanel, simpler color management and overlay.
-    // Downside: no selection (for now)
     public class ReplayLogsControlEx2 : UserControl, IDisposable
     {
         public WatchedVariable<string> FilterText { get; } = new();
@@ -39,12 +40,9 @@ namespace VisualReplayDebugger
             set
             {
                 replay = value;
-                ActiveLogs.Clear();
-                FilteredLogs.Clear();
-                AllLogs.Clear();
                 if (replay != null)
                 {
-                    AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToList();
+                    AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToArray();
                 }
                 EntitySelectionLocked.Set(false);
                 RefreshFilteredLogs();
@@ -54,9 +52,9 @@ namespace VisualReplayDebugger
 
         record LogEntryRecord(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color);
 
-        private List<LogEntryRecord> AllLogs = new();
-        private List<LogEntryRecord> FilteredLogs = new();
-        private List<LogEntryRecord> ActiveLogs = new();
+        private LogEntryRecord[] AllLogs = new LogEntryRecord[0];
+        private LogEntryRecord[] FilteredLogs = new LogEntryRecord[0];
+        private LogEntryRecord[] ActiveLogs = new LogEntryRecord[0];
 
         public record TextEntry
         {
@@ -87,10 +85,10 @@ namespace VisualReplayDebugger
             
             this.IsVisibleChanged += (o, e) => RefreshLogs();
 
-            this.MouseDown += OnMouseDown;
-            //EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
-            this.MouseDoubleClick += OnMouseDoubleClick;
-            //EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
+            //this.MouseDown += OnMouseDown;
+            EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
+            //this.MouseDoubleClick += OnMouseDoubleClick;
+            EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
 
             SelectionSpans.Changed += InvalidateVisualLocal;
 
@@ -114,7 +112,7 @@ namespace VisualReplayDebugger
 
         private void InvalidateVisualLocal()
         {
-            System.Diagnostics.Debug.WriteLine("InvalidateVisualLocal");
+            DebugLog("LogsControl InvalidateVisualLocal");
             InvalidateVisual();
         }
 
@@ -131,7 +129,7 @@ namespace VisualReplayDebugger
             var windowRange = Replay.GetFramesForTimes(TimelineWindow.Start, TimelineWindow.End);
             int currentFrame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
 
-            System.Diagnostics.Debug.WriteLine($"CollectLogs at frame {currentFrame} ({TimelineWindow.Start},{TimelineWindow.End},{TimelineWindow.Timeline.Cursor})");
+            DebugLog($"CollectLogs at frame {currentFrame} ({TimelineWindow.Start},{TimelineWindow.End},{TimelineWindow.Timeline.Cursor})");
 
             var currentFrameEntry = new LogEntryRecord(currentFrame, default(Entity), string.Empty, string.Empty, $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(currentFrame))} ({currentFrame})", "------------------------", ReplayCapture.Color.Black );
 
@@ -171,27 +169,29 @@ namespace VisualReplayDebugger
         {
             if (Replay == null) return;
 
-            FilteredLogs.Clear();
             var filter = new SearchContext(FilterText.Value);
-            FilteredLogs.AddRange(AllLogs.Where(x => 
+            FilteredLogs = AllLogs.Where(x =>
                 (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
                 && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
                 && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
-                && (filter.Match(x.logHeader) || filter.Match(x.formattedLog))));
+                && (filter.Match(x.logHeader) || filter.Match(x.formattedLog)))
+                .ToArray();
         }
+
+        private int CurrentTimeActiveLogLineStart;
+        private int CurrentTimeActiveLogLineEnd;
 
         public void RefreshLogs()
         {
             if (Replay == null) return;
             if (this.IsVisible == false) return;
 
-            ActiveLogs.Clear();
-            ActiveLogs.AddRange(CollectLogs());
+            ActiveLogs = CollectLogs().ToArray();
 
             SelectionSpans.Clear();
             LastSelectionIndex = -1;
 
-            double h = ActiveLogs.Count * LineHeight;
+            double h = ActiveLogs.Length * LineHeight;
             if (h < ViewportHeight) h = ViewportHeight;
             this.Height = h;
             InvalidateVisualLocal();
@@ -232,9 +232,13 @@ namespace VisualReplayDebugger
         private void TimelineWindow_Changed()
         {
             RefreshLogs();
-            
-            // Auto scrolling
+
             int currentFrame = Replay?.GetFrameForTime(TimelineWindow.Timeline.Cursor) ?? 0;
+
+            CurrentTimeActiveLogLineStart = Array.FindIndex(ActiveLogs, x => x.frame == currentFrame);
+            CurrentTimeActiveLogLineEnd = Array.FindLastIndex(ActiveLogs, x => x.frame == currentFrame);
+
+            // Auto scrolling
             if (_lastFrame != currentFrame)
             {
                 int lineNumAtCursorFrame = 0;
@@ -260,7 +264,7 @@ namespace VisualReplayDebugger
 
         private void ScrollToLine(int lineIndex)
         {
-            //System.Diagnostics.Debug.WriteLine($"Scrolling to line: {lineIndex+1}");
+            DebugLog($"LogsControl Scrolling to line: {lineIndex+1}");
             if (IsJumpingToTime) return;
             
             double y_min = VerticalOffset;
@@ -296,17 +300,28 @@ namespace VisualReplayDebugger
 
         internal void MouseDownHandler(object sender, RoutedEventArgs e)
         {
-            if (e is MouseButtonEventArgs mb) { OnMouseDown(sender, mb); }
+            if (e is MouseButtonEventArgs mb) 
+            {
+                var mousePos = mb.GetPosition(this);
+                if (mousePos.X > 0
+                    && mousePos.X < ActualWidth
+                    && mousePos.Y >= VerticalOffset
+                    && mousePos.Y <= (VerticalOffset + ViewportHeight) )
+                {
+                    OnMouseDown(sender, mb);
+                }
+            }
         }
 
         private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (Replay == null) { return; }
 
-            double mousePos = e.GetPosition(this).Y;
-            int lineNum = (int)Math.Floor(mousePos / LineHeight);
+            var mousePos = e.GetPosition(this);
+            double mousePosY = mousePos.Y;
+            int lineNum = (int)Math.Floor(mousePosY / LineHeight);
 
-            //System.Diagnostics.Debug.WriteLine($"Mouse at line:{lineNum}");
+            DebugLog($"LogsControl Mouse at line:{lineNum}");
 
             int startRange = lineNum;
             if ((Keyboard.GetKeyStates(Key.LeftShift) & KeyStates.Down) > 0)
@@ -325,12 +340,24 @@ namespace VisualReplayDebugger
                 SelectionSpans.SetSelection(startRange, lineNum);
             }
             LastSelectionIndex = lineNum;
+
+            e.Handled = true;
         }
 
 
         internal void MouseDoubleClickHandler(object sender, RoutedEventArgs e)
         {
-            if (e is MouseButtonEventArgs mb) { OnMouseDoubleClick(sender, mb); }
+            if (e is MouseButtonEventArgs mb) 
+            {
+                var mousePos = mb.GetPosition(this);
+                if (mousePos.X > 0
+                    && mousePos.X < ActualWidth
+                    && mousePos.Y >= VerticalOffset
+                    && mousePos.Y <= (VerticalOffset + ViewportHeight))
+                {
+                    OnMouseDoubleClick(sender, mb); 
+                }
+            }
         }
 
         bool IsJumpingToTime = false;
@@ -338,7 +365,7 @@ namespace VisualReplayDebugger
         {
             if (Replay == null) { return; }
 
-            double mousePos = e.GetPosition(this).Y;// + VerticalOffset;
+            double mousePos = e.GetPosition(this).Y;
 
             int lineNum = (int)Math.Floor(mousePos / LineHeight);
             var logLine = ActiveLogs.Skip(lineNum).FirstOrDefault();
@@ -349,6 +376,8 @@ namespace VisualReplayDebugger
                 TimelineWindow.Timeline.Cursor = t;
                 IsJumpingToTime = false;
             }
+
+            e.Handled = true;
         }
 
         public void JumpToNextSearchResult()
@@ -377,7 +406,7 @@ namespace VisualReplayDebugger
         {
             var search = new SearchContext(SearchText.Value);
             var previousSelectedLine = ActiveLogs.Select((item, index) => (item, index)).LastOrDefault(x => x.index < LastSelectionIndex && search.Match($"{x.item.logHeader} {x.item.formattedLog}"));
-            if (!string.IsNullOrEmpty(previousSelectedLine.item.formattedLog))
+            if (!string.IsNullOrEmpty(previousSelectedLine.item?.formattedLog))
             {
                 SelectionSpans.SetSelection(previousSelectedLine.index);
                 LastSelectionIndex = previousSelectedLine.index;
@@ -394,7 +423,7 @@ namespace VisualReplayDebugger
         protected override void OnRender(DrawingContext dc)
         {
             base.OnRender(dc);
-            System.Diagnostics.Debug.WriteLine($"render");
+            DebugLog($"LogsControl OnRender");
             if (Replay == null) return;
 
             var currentFrameHighlightColor = Colors.LightBlue;
@@ -468,11 +497,12 @@ namespace VisualReplayDebugger
             var scrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, 0), new Size(scrollRefWidth, ActualHeight));
             dc.DrawRectangle(Brushes.LightGray, null, scrollRef);
 
-            int numLines = ActiveLogs.Count;
+            // Draw regions on scroll bar
+            int numLines = ActiveLogs.Length;
             if (numLines > 0)
             {
-                int startLine = ActiveLogs.FindIndex(x => x.frame == currentFrame);
-                int endline = ActiveLogs.FindLastIndex(x => x.frame == currentFrame);
+                int startLine = CurrentTimeActiveLogLineStart;
+                int endline = CurrentTimeActiveLogLineEnd;
                 int lineCount = endline - startLine + 1;
 
                 double startPos = VerticalOffset + ViewportHeight * startLine / numLines;
@@ -488,7 +518,7 @@ namespace VisualReplayDebugger
                     lineNum = 1;
                     foreach (var line in ActiveLogs)
                     {
-                        if ( search.Match($"{line.logHeader} {line.formattedLog}") )
+                        if (search.Match($"{line.logHeader} {line.formattedLog}"))
                         {
                             double lineYPos = VerticalOffset + ViewportHeight * lineNum / numLines;
                             var currentLineScrollRef = new Rect(new System.Windows.Point(ActualWidth - scrollRefWidth + 1, lineYPos), new Size(scrollRefWidth, lineHeight));
@@ -513,6 +543,12 @@ namespace VisualReplayDebugger
                     }
                 }
             }
+        }
+
+        [System.Diagnostics.Conditional("VERBOSE")]
+        public static void DebugLog(string message)
+        {
+            System.Diagnostics.Debug.WriteLine(message);
         }
     }
 }

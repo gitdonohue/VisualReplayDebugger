@@ -15,6 +15,8 @@ namespace Timeline
 
         double Range => End - Start;
         double CursorRatio => (Range > 0) ? ((Cursor - Start) / Range) : 0;
+
+        void SetCursorNoEvent(double t);
     }
 
     public interface ITimelineWindow
@@ -32,6 +34,7 @@ namespace Timeline
 
         void ScaleWindow(double scaleFactor, double center);
         void SlideWindow(double offset);
+        void SlideWindowAndSetTime(double offset, double t);
     }
 
     #region implementations
@@ -43,10 +46,12 @@ namespace Timeline
         public double End { get => end; set { double pre = end; end = SafeVal(value); if (end <= start) end = start; if (end != pre) CallChanged(); } }
         double end = 1;
 
-        public double Cursor { get => cursor; set { double pre = cursor; cursor = SafeVal(value); if (cursor < start) cursor = start; if (cursor > end) cursor = end; if (cursor != pre) CallChanged(); } }
+        public double Cursor { get => cursor; set { double pre = cursor; SetCursorNoEvent(value); if (cursor != pre) CallChanged(); } }
         double cursor;
 
         public event Action Changed;
+
+        public void SetCursorNoEvent(double t) { cursor = SafeVal(t); if (cursor < start) cursor = start; if (cursor > end) cursor = end; }
 
         private void CallChanged() { Changed?.Invoke(); }
 
@@ -134,6 +139,11 @@ namespace Timeline
 
         public void SlideWindow(double offset)
         {
+            SlideWindow(offset, true);
+        }
+
+        private void SlideWindow(double offset, bool callChanged)
+        {
             double preStart = start;
             double preEnd = end;
             if (offset == 0) return;
@@ -147,10 +157,15 @@ namespace Timeline
             }
             start += offset;
             end += offset;
-            if (start != preStart || end != preEnd) CallChanged();
+            if (callChanged && (start != preStart || end != preEnd)) CallChanged();
+        }
+
+        public void SlideWindowAndSetTime(double offset, double t)
+        {
+            Timeline.SetCursorNoEvent(t);
+            SlideWindow(offset,false);
+            CallChanged();
         }
     }
-
     #endregion //implementations
-
 }

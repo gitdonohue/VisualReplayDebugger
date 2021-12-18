@@ -1,6 +1,8 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
+//#define VERBOSE
+
 using ReplayCapture;
 using SelectionSet;
 using System;
@@ -224,7 +226,7 @@ namespace VisualReplayDebugger
             
             if (GraphsBitmap == null || current_w != w || current_h != h)
             {
-                //System.Diagnostics.Trace.WriteLine($"GraphsBitmap resized: ({current_w},{current_h}) -> ({w},{h})");
+                DebugLog($"GraphsBitmap resized: ({current_w},{current_h}) -> ({w},{h})");
                 if (w*h != 0 )
                 {
                     GraphsBitmap = new RenderTargetBitmap(w,h, dpi.PixelsPerInchX / reductionFactor, dpi.PixelsPerInchY / reductionFactor, PixelFormats.Pbgra32);
@@ -239,6 +241,7 @@ namespace VisualReplayDebugger
 
         private void SetDirty()
         {
+            DebugLog($"Graphs SetDirty {TimelineWindow?.Timeline.Cursor}");
             InvalidateVisual();
         }
 
@@ -284,7 +287,7 @@ namespace VisualReplayDebugger
             }
         }
 
-        private Rect Bounds => new Rect(0, 0, ActualWidth, ActualHeight);
+        private Rect Bounds => new Rect(0, 0, Math.Ceiling(ActualWidth), Math.Ceiling(ActualHeight));
 
         private double GetHighVal(Entity entity, string streamlabel)
         {
@@ -462,6 +465,8 @@ namespace VisualReplayDebugger
         {
             if (replay == null) return;
 
+            DebugLog($"RenderGraphsForRange times:({timeStart},{timeEnd}) sz:({bounds})");
+
             double t0 = timeStart;
             double t1 = timeEnd;
 
@@ -517,7 +522,13 @@ namespace VisualReplayDebugger
         }
 
         private static System.Windows.Point IntoRect(Rect rect, double x01, double y01) => new System.Windows.Point(rect.X + x01 * rect.Width, rect.Y + ((1 - y01) * rect.Height));
-        
+
         #endregion //drawing
+
+        [System.Diagnostics.Conditional("VERBOSE")]
+        public static void DebugLog(string message)
+        {
+            System.Diagnostics.Debug.WriteLine(message);
+        }
     }
 }
