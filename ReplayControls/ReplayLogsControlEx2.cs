@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -186,15 +187,25 @@ namespace VisualReplayDebugger
             if (Replay == null) return;
             if (this.IsVisible == false) return;
 
-            ActiveLogs = CollectLogs().ToArray();
-
             SelectionSpans.Clear();
             LastSelectionIndex = -1;
+            
+            Task.Run(() => 
+            {
+                // Off ui thread
+                ActiveLogs = CollectLogs().ToArray();
 
-            double h = ActiveLogs.Length * LineHeight;
-            if (h < ViewportHeight) h = ViewportHeight;
-            this.Height = h;
-            InvalidateVisualLocal();
+                // On ui thread
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // Code to run on the GUI thread.
+                    double h = ActiveLogs.Length * LineHeight;
+                    if (h < ViewportHeight) h = ViewportHeight;
+                    this.Height = h;
+            
+                    InvalidateVisualLocal(); 
+                });
+            });
         }
 
         public void RefreshLogsAndFilters() { RefreshFilteredLogs(); RefreshLogs(); }
