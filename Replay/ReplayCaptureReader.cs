@@ -351,6 +351,7 @@ namespace ReplayCapture
                 {
                     // Wrap in a deflate stream
                     stream = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress);
+                    stream = new BufferedStream(stream, 64<<10); // Massively improves read performance
                 }
 
                 try

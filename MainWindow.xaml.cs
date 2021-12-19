@@ -285,8 +285,8 @@ namespace VisualReplayDebugger
                 var replay = new ReplayCaptureReader(path);
                 Application.Current.Dispatcher.Invoke(new Action(() =>
                 {
-                    this.Title = $"Visual Replay Debugger - {pathName}";
-                    this.Cursor = Cursors.Arrow;
+                    this.Title = $"Visual Replay Debugger - {pathName} (prepping...)";
+
                     Replay = replay;
                     ReplayChanged?.Invoke(replay);
 
@@ -295,6 +295,9 @@ namespace VisualReplayDebugger
                     VisibleEntities.Set(Replay.Entities);
 
                     this.TimelineWindow.Fill();
+
+                    this.Title = $"Visual Replay Debugger - {pathName}";
+                    this.Cursor = Cursors.Arrow;
                 }));
             });
         }
