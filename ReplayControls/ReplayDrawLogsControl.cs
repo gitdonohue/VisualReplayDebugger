@@ -78,7 +78,7 @@ namespace VisualReplayDebugger
 
             if (ShowSelectedLogsOnly)
             {
-                drawLogs = drawLogs.Where(x => EntitySelection.Contains(x.Item2.entity));
+                drawLogs = drawLogs.Where(x => EntitySelection.Contains(x.val.entity));
             }
 
             // Show where the current time would be in the log
@@ -88,7 +88,7 @@ namespace VisualReplayDebugger
             }
             
             this.Foreground = Brushes.Black;
-            this.Text = string.Join('\n', drawLogs.Select(x => DrawCommandLogFormat(x.Item1,x.Item2)));
+            this.Text = string.Join('\n', drawLogs.Select(x => DrawCommandLogFormat(x.frame,x.val)));
         }
     }
 }

@@ -23,9 +23,9 @@ namespace ReplayCapture
             public bool Overlaps(FrameRange other) => (other.Start < this.Start) ? (other.End >= this.Start) : (other.Start <= this.End);
         }
 
-        public class FrameStampedList<T> : IReadOnlyList<(int, T)>
+        public class FrameStampedList<T> : IReadOnlyList<(int frame, T val)>
         {
-            private List<(int, T)> baking_list = new();
+            private List<(int frame, T val)> baking_list = new();
 
             private int[] internal_frames = new int[0];
             private T[] internal_values = new T[0];
@@ -38,17 +38,17 @@ namespace ReplayCapture
 
             public void Bake()
             {
-                internal_frames = baking_list.Select(x => x.Item1).ToArray();
-                internal_values = baking_list.Select(x => x.Item2).ToArray();
+                internal_frames = baking_list.Select(x => x.frame).ToArray();
+                internal_values = baking_list.Select(x => x.val).ToArray();
                 baking_list.Clear();
                 baking_list = null;
             }
 
-            public void Load(IEnumerable<(int,T)> values)
+            public void Load(IEnumerable<(int frame,T val)> values)
             {
                 // TODO: Assert that times are monotonic
-                internal_frames = values.Select(x => x.Item1).ToArray();
-                internal_values = values.Select(x => x.Item2).ToArray();
+                internal_frames = values.Select(x => x.frame).ToArray();
+                internal_values = values.Select(x => x.val).ToArray();
                 baking_list.Clear();
                 baking_list = null;
             }
@@ -71,7 +71,7 @@ namespace ReplayCapture
                 return (index < 0) ? default(T) : internal_values[index];
             }
 
-            public IEnumerable<(int, T)> SubRange(FrameRange range)
+            public IEnumerable<(int frame, T val)> SubRange(FrameRange range)
             {
                 for (int index = FirstIndexFor(range.Start); index < internal_frames.Length; ++index)
                 {
@@ -84,7 +84,7 @@ namespace ReplayCapture
                 }
             }
 
-            public IEnumerable<(int, T)> ForFrame(int targetFrame)
+            public IEnumerable<(int frame, T val)> ForFrame(int targetFrame)
             {
                 int index = FirstIndexFor(targetFrame);
                 for (; index >= 0 && index < Count; ++index)
@@ -98,9 +98,9 @@ namespace ReplayCapture
                 }
             }
 
-            public IEnumerable<T> AtFrame(int targetFrame) => ForFrame(targetFrame).Select(x=>x.Item2);
+            public IEnumerable<T> AtFrame(int targetFrame) => ForFrame(targetFrame).Select(x=>x.val);
 
-            public IEnumerator<(int, T)> GetEnumerator()
+            public IEnumerator<(int frame, T val)> GetEnumerator()
             {
                 for (int index = 0; index < Count; ++index)
                 {
@@ -120,7 +120,7 @@ namespace ReplayCapture
 
             public int Count => internal_values.Length;
 
-            public (int, T) this[int index] => (internal_frames[index],internal_values[index]);
+            public (int frame, T val) this[int index] => (internal_frames[index],internal_values[index]);
         }
 
         public class ForDict<K, V> : Dictionary<K, V> where V : class, new()
@@ -217,8 +217,8 @@ namespace ReplayCapture
             var paramsStream = EntityDynamicParamsCombined.For(entity);
             foreach (var paramsEntry in paramsStream)
             {
-                if (paramsEntry.Item1 > frame) break;
-                dict[paramsEntry.Item2.Item1] = paramsEntry.Item2.Item2;
+                if (paramsEntry.frame > frame) break;
+                dict[paramsEntry.val.name] = paramsEntry.val.val;
             }
             return dict;
         }
@@ -258,20 +258,20 @@ namespace ReplayCapture
             }
         }
 
-        public IEnumerable<(string, float)> GetDynamicValuesAt(Entity entity, int frame)
+        public IEnumerable<(string name, float val)> GetDynamicValuesAt(Entity entity, int frame)
         {
             // TODO: pre-index this
             var dict = new Dictionary<string, float>();
             var paramsStream = EntityDynamicValues.For(entity);
             foreach (var paramsEntry in paramsStream)
             {
-                if (paramsEntry.Item1 > frame) break;
-                dict[paramsEntry.Item2.Item1] = paramsEntry.Item2.Item2;
+                if (paramsEntry.frame > frame) break;
+                dict[paramsEntry.val.name] = paramsEntry.val.val;
             }
             return dict.Select(x=>(x.Key,x.Value));
         }
 
-        public IEnumerable<(string,string)> AllParametersAt(Entity entity, int frame)
+        public IEnumerable<(string name,string val)> AllParametersAt(Entity entity, int frame)
         {
             if (entity != null)
             {
@@ -295,7 +295,7 @@ namespace ReplayCapture
         public HashSet<Color> LogColors { get; private set; } = new();
 
         public HashSet<string> DrawCategories { get; private set; } = new();
-        public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.Item2.IsCreationDraw).Select(x => x.Item2.category).Distinct();
+        public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.val.IsCreationDraw).Select(x => x.val.category).Distinct();
         public HashSet<Color> DrawColors { get; private set; } = new();
 
         public float[] FrameTimes { get; private set; } = new float[1];
@@ -303,11 +303,11 @@ namespace ReplayCapture
         public List<EntityEx> Entities { get; private set; } = new();
         public Dictionary<Entity, FrameRange> EntityLifeTimes { get; private set; } = new();
         private FrameStampedListDict<Entity,Transform> EntitySetTransforms { get; set; } = new();
-        public FrameStampedList<(Entity, string, string, Color)> LogEntries { get; private set; } = new();
-        public FrameStampedListDict<Entity, (string, string)> EntityDynamicParamsCombined { get; private set; } = new();
+        public FrameStampedList<(Entity entity, string category, string message, Color color)> LogEntries { get; private set; } = new();
+        public FrameStampedListDict<Entity, (string name, string val)> EntityDynamicParamsCombined { get; private set; } = new();
         public HashSet<string> EntityDynamicParamsNames { get; private set; } = new();
         public Dictionary<Entity, Dictionary<string, List<DynamicParamTimeEntry>>> EntityDynamicParams { get; private set; } = new();
-        public FrameStampedListDict<Entity, (string, float)> EntityDynamicValues { get; private set; } = new();
+        public FrameStampedListDict<Entity, (string name, float val)> EntityDynamicValues { get; private set; } = new();
 
         public Dictionary<Entity, List<int>> LogEntityFrameMarkers = new();
 

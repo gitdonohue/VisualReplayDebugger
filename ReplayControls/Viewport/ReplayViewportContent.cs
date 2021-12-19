@@ -443,10 +443,10 @@ namespace VisualReplayDebugger
                         points.Add(new Point3D(start.Translation.X, start.Translation.Y, start.Translation.Z));
                         foreach (var timedPos in positions)
                         {
-                            if (windowRange.InRange(timedPos.Item1))
+                            if (windowRange.InRange(timedPos.frame))
                             {
-                                points.Add(timedPos.Item2.Translation.ToPoint());
-                                points.Add(timedPos.Item2.Translation.ToPoint());
+                                points.Add(timedPos.val.Translation.ToPoint());
+                                points.Add(timedPos.val.Translation.ToPoint());
                             }
                         }
                     }

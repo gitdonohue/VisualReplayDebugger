@@ -11,10 +11,10 @@ namespace VisualReplayDebugger
 {
     public class SelectionSpans
     {
-        private List<(int, int)> spans = new();
-        public IEnumerable<(int, int)> Spans => spans;
+        private List<(int start, int stop)> spans = new();
+        public IEnumerable<(int start, int stop)> Spans => spans;
 
-        public IEnumerable<int> AllIndexes => spans.SelectMany(x=>Enumerable.Range(x.Item1,x.Item2-x.Item1+1));
+        public IEnumerable<int> AllIndexes => spans.SelectMany(x=>Enumerable.Range(x.start,x.stop-x.start+1));
         
         public event Action Changed;
         
@@ -43,22 +43,22 @@ namespace VisualReplayDebugger
                 spans.Add((index,index));
                 Changed?.Invoke();
             }
-            if (spans.Any(s => s.Item1 <= index && s.Item2 >= index))
+            if (spans.Any(s => s.start <= index && s.stop >= index))
             {
                 // Already included
             }
             else
             {
-                int indexBefore = spans.FindLastIndex(x => x.Item2 < index);
-                int indexAfter = spans.FindIndex(x => x.Item1 > index);
+                int indexBefore = spans.FindLastIndex(x => x.stop < index);
+                int indexAfter = spans.FindIndex(x => x.start > index);
                 if (indexBefore == -1)
                 {
                     // Before first span
                     var s = spans.ElementAt(indexAfter);
-                    if ( s.Item1 == (index+1) )
+                    if ( s.start == (index+1) )
                     {
                         // Add to start of first span
-                        spans[indexAfter] = (index,s.Item2);
+                        spans[indexAfter] = (index,s.stop);
                     }
                     else
                     {
@@ -70,10 +70,10 @@ namespace VisualReplayDebugger
                 {
                     // After last span
                     var s = spans.ElementAt(indexBefore);
-                    if (s.Item2 == (index - 1))
+                    if (s.stop == (index - 1))
                     {
                         // Add to end of last span
-                        spans[indexBefore] = (s.Item1, index);
+                        spans[indexBefore] = (s.start, index);
                     }
                     else
                     {
@@ -86,23 +86,23 @@ namespace VisualReplayDebugger
                     // Between spans
                     var s_pre = spans.ElementAt(indexBefore);
                     var s_post = spans.ElementAt(indexAfter);
-                    if (s_pre.Item2 == (index - 1)) // Just after pre
+                    if (s_pre.stop == (index - 1)) // Just after pre
                     {
-                        if (s_post.Item1 == (index + 1)) // Touches post
+                        if (s_post.start == (index + 1)) // Touches post
                         {
                             // Merge contiguous spans
-                            spans[indexBefore] = (s_pre.Item1, s_post.Item2);
+                            spans[indexBefore] = (s_pre.start, s_post.stop);
                             spans.RemoveAt(indexAfter);
                         }    
                         else
                         {
                             // Add to previous span
-                            spans[indexBefore] = (s_pre.Item1, index);
+                            spans[indexBefore] = (s_pre.start, index);
                         }
                     }
-                    else if (s_post.Item1 == (index + 1)) // Just before post
+                    else if (s_post.start == (index + 1)) // Just before post
                     {
-                        spans[indexAfter] = (index, s_post.Item2);
+                        spans[indexAfter] = (index, s_post.stop);
                     }
                     else
                     {
@@ -116,36 +116,36 @@ namespace VisualReplayDebugger
 
         public void RemoveSelectionAtIndex(int index) 
         {
-            int spanIndex = spans.FindIndex(x => x.Item1 <= index && x.Item2 >= index);
+            int spanIndex = spans.FindIndex(x => x.start <= index && x.stop >= index);
             if (spanIndex != -1)
             {
                 var s = spans.ElementAt(spanIndex);
-                int spanLen = s.Item2 - s.Item1 + 1;
+                int spanLen = s.stop - s.start + 1;
                 if (spanLen == 1)
                 {
                     spans.RemoveAt(spanIndex);
                 }
                 else
                 {
-                    if (s.Item1 == index)
+                    if (s.start == index)
                     {
-                        spans[spanIndex] = (index+1,s.Item2);
+                        spans[spanIndex] = (index+1,s.stop);
                     }
-                    else if (s.Item2 == index)
+                    else if (s.stop == index)
                     {
-                        spans[spanIndex] = (s.Item1, index-1);
+                        spans[spanIndex] = (s.start, index-1);
                     }
                     else
                     {
-                        spans[spanIndex] = (s.Item1, index-1);
-                        spans.Insert(spanIndex + 1, (index+1, s.Item2));
+                        spans[spanIndex] = (s.start, index-1);
+                        spans.Insert(spanIndex + 1, (index+1, s.stop));
                     }
                 }
                 Changed?.Invoke();
             }
         }
 
-        public bool Contains(int index) => Spans.Any(x => x.Item1 <= index && x.Item2 >= index);
+        public bool Contains(int index) => Spans.Any(x => x.start <= index && x.stop >= index);
 
         public void ToggleSelection(int index)
         {
@@ -188,35 +188,5 @@ namespace VisualReplayDebugger
                 ToggleSelection(index);
             }
         }
-
-        //public bool GetNextSpanIndexFrom(int index, out int nextIndex)
-        //{
-        //    nextIndex = index;
-        //    if (!Empty)
-        //    {
-        //        int firstIndex = spans.First().Item1;
-        //        int lastIndex = spans.Last().Item2;
-        //        if (index >= lastIndex) { return false; }
-        //        if (index < firstIndex) { nextIndex = firstIndex; return true; }
-        //        nextIndex = AllIndexes.FirstOrDefault(x => x > index);
-        //        return true;
-        //    }
-        //    return false;
-        //}
-
-        //public bool GetPreviousSpanIndexFrom(int index, out int previousIndex)
-        //{
-        //    previousIndex = index;
-        //    if (!Empty)
-        //    {
-        //        int firstIndex = spans.First().Item1;
-        //        int lastIndex = spans.Last().Item2;
-        //        if (index <= firstIndex) { return false; }
-        //        if (index > lastIndex) { previousIndex = lastIndex; return true; }
-        //        previousIndex = AllIndexes.LastOrDefault(x => x < index);
-        //        return true;
-        //    }
-        //    return false;
-        //}
     }
 }

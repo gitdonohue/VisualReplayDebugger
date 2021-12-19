@@ -44,7 +44,6 @@ namespace VisualReplayDebugger
             startRatio = Replay.GetTimeForFrame(lifetime.Start) / totalTime;
             endRatio = Replay.GetTimeForFrame(lifetime.End) / totalTime;
 
-            //markerPositions = Replay.LogEntries.Where(x => x.Item2.Item1 == entity).Select(x => x.Item1).Distinct().Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();
             if (Replay.LogEntityFrameMarkers.TryGetValue(entity, out var lst))
             {
                 markerPositions = lst.Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();

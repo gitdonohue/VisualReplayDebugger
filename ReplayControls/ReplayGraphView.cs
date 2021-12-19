@@ -103,7 +103,7 @@ namespace VisualReplayDebugger
             EntitySelection.Changed -= EntitySelection_Changed;
         }
 
-        private Dictionary<Entity, Dictionary<string, List<(double, double)>>> ValueTables = new();
+        private Dictionary<Entity, Dictionary<string, List<(double t, double val)>>> ValueTables = new();
         private Dictionary<Entity, Dictionary<string, double>> MaxValueTables = new();
 
         private Dictionary<Entity, Dictionary<string, double>> MeanValueTables = new();
@@ -148,11 +148,11 @@ namespace VisualReplayDebugger
                     StdDevValueTables[entityValues.Key] = stddevvalues;
                     foreach (var valuestream in entityValues.Value)
                     {
-                        double sum = valuestream.Value.Sum(x => x.Item2);
+                        double sum = valuestream.Value.Sum(x => x.val);
                         double avg = sum / valuestream.Value.Count;
                         meanvalues[valuestream.Key] = avg;
 
-                        double stddev = Math.Sqrt(valuestream.Value.Sum(x => (x.Item2 - avg)*(x.Item2 - avg)) / valuestream.Value.Count);
+                        double stddev = Math.Sqrt(valuestream.Value.Sum(x => (x.val - avg)*(x.val - avg)) / valuestream.Value.Count);
                         stddevvalues[valuestream.Key] = stddev;
                     }
                 }
@@ -351,7 +351,7 @@ namespace VisualReplayDebugger
                         double highVal = GetHighVal(entity,streamlabel);
 
                         double baselineHeight = rectToFillForParameter.Y + rectToFillForParameter.Height;
-                        double valueAtCursor = dataPoints.TakeWhile(x => x.Item1 < cursorTime).LastOrDefault().Item2;
+                        double valueAtCursor = dataPoints.TakeWhile(x => x.t < cursorTime).LastOrDefault().val;
                         double textHeight = 8;
                         double yPos = baselineHeight - textHeight - (valueAtCursor * (rectToFillForParameter.Height - textHeight) / highVal);
 
@@ -394,7 +394,7 @@ namespace VisualReplayDebugger
             }
         }
 
-        private IEnumerable<(string,List<(double,double)>,int,Rect)> EnumerateParameterDrawRegions(Entity entity, Rect rectToFillForEntity)
+        private IEnumerable<(string,List<(double t,double val)>,int,Rect)> EnumerateParameterDrawRegions(Entity entity, Rect rectToFillForEntity)
         {
             if (ValueTables.TryGetValue(entity, out var entityData))
             {
@@ -431,17 +431,17 @@ namespace VisualReplayDebugger
             }
         }
 
-        private static IEnumerable<(double,double)> GetRange(IEnumerable<(double,double)> values, double start, double end)
+        private static IEnumerable<(double begin,double end)> GetRange(IEnumerable<(double t,double val)> values, double start, double finish)
         {
             double lastValue = 0;
             bool firstSent = false;
             foreach (var timePair in values)
             {
-                double t = timePair.Item1;
-                double v = timePair.Item2;
-                if (t > end)
+                double t = timePair.t;
+                double v = timePair.val;
+                if (t > finish)
                 {
-                    yield return (end, lastValue);
+                    yield return (finish, lastValue);
                     yield break;
                 }
                 else if (t < start)
@@ -491,7 +491,7 @@ namespace VisualReplayDebugger
                         double baselineHeight = rectToFillForParameter.Y + rectToFillForParameter.Height;
                         double highVal = view.GetHighVal(entity, streamlabel);
 
-                        var _pts = GetRange(dataPoints,t0_,t1_).Select(x => IntoRect(rectToFillForParameter, (x.Item1 - t0) / (t1 - t0), x.Item2 / highVal));
+                        var _pts = GetRange(dataPoints,t0_,t1_).Select(x => IntoRect(rectToFillForParameter, (x.begin - t0) / (t1 - t0), x.end / highVal));
 
                         if (doStep) { _pts = _pts.StepPoints(); }
                         var pts = _pts.ToArray();

@@ -90,10 +90,10 @@ namespace VisualReplayDebugger
             {
                 // Find closest transition to left
                 double t = TimelineWindow.Timeline.Cursor;
-                var closest = EnumerateAllTransitions().Where(x => x.Item1 < t).OrderBy(x => t - x.Item1).FirstOrDefault();
-                if (closest.Item2 != null)
+                var closest = EnumerateAllTransitions().Where(x => x.time < t).OrderBy(x => t - x.time).FirstOrDefault();
+                if (closest.drawblock != null)
                 {
-                    TimelineWindow.Timeline.Cursor = closest.Item1;
+                    TimelineWindow.Timeline.Cursor = closest.time;
                 }
             }
         }
@@ -104,10 +104,10 @@ namespace VisualReplayDebugger
             {
                 // Find closest transition to right
                 double t = TimelineWindow.Timeline.Cursor;
-                var closest = EnumerateAllTransitions().Where(x => x.Item1 > t).OrderBy(x => x.Item1 - t).FirstOrDefault();
-                if (closest.Item2 != null)
+                var closest = EnumerateAllTransitions().Where(x => x.time > t).OrderBy(x => x.time - t).FirstOrDefault();
+                if (closest.drawblock != null)
                 {
-                    TimelineWindow.Timeline.Cursor = closest.Item1;
+                    TimelineWindow.Timeline.Cursor = closest.time;
                 }
             }
         }
@@ -133,7 +133,7 @@ namespace VisualReplayDebugger
             }
         }
 
-        private IEnumerable<(double,DrawBlock)> EnumerateAllTransitions()
+        private IEnumerable<(double time,DrawBlock drawblock)> EnumerateAllTransitions()
         {
             foreach (var block in EnumerateAllBlocks())
             {

@@ -43,7 +43,10 @@ namespace VisualReplayDebugger
                 replay = value;
                 if (replay != null)
                 {
-                    AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3, LogHeaderFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), LogFormat(x.Item1, x.Item2.Item1, x.Item2.Item2, x.Item2.Item3), x.Item2.Item4)).ToArray();
+                    AllLogs = Replay.LogEntries.Select(x => new LogEntryRecord(x.frame, x.val.entity, x.val.category, x.val.message, 
+                        LogHeaderFormat(x.frame, x.val.entity, x.val.category, x.val.message), 
+                        LogFormat(x.frame, x.val.entity, x.val.category, x.val.message), 
+                        x.val.color)).ToArray();
                 }
                 EntitySelectionLocked.Set(false);
                 RefreshFilteredLogs();
