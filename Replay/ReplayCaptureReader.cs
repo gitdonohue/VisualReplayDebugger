@@ -151,7 +151,9 @@ namespace ReplayCapture
         public int GetFrameForTime(double t)
         {
             if (t <= 0) return 0;
-            int index = FramesForTimes[(int)Math.Abs(t)];
+            int t_indx = (int)Math.Abs(t);
+            if (t_indx >= FramesForTimes.Length) { t_indx = FramesForTimes.Length - 1; }
+            int index = FramesForTimes[t_indx];
             for(; index < FrameTimes.Length; ++index)
             {
                 if (FrameTimes[index]>=t)
@@ -287,13 +289,14 @@ namespace ReplayCapture
 
         }
 
-        public IEnumerable<string> GetEntityCategories() => Entities.Select(x => x.CategoryName).Distinct();
-        public IEnumerable<string> GetLogCategories() => LogEntries.Select(x => x.Item2.Item2).Distinct();
-        public IEnumerable<string> GetParameterCategories() => EntityDynamicParamsNames;
-        public IEnumerable<Color> GetLogColors() => LogEntries.Select(x => x.Item2.Item4).Distinct();
+        public HashSet<string> EntityCategories { get; private set; } = new();
+        public HashSet<string> LogCategories { get; private set; } = new();
+        public IEnumerable<string> ParameterCategories => EntityDynamicParamsNames;
+        public HashSet<Color> LogColors { get; private set; } = new();
 
+        public HashSet<string> DrawCategories { get; private set; } = new();
         public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.Item2.IsCreationDraw).Select(x => x.Item2.category).Distinct();
-        public IEnumerable<Color> GetDrawColors() => DrawCommands.Select(x => x.Item2.color).Distinct();
+        public HashSet<Color> DrawColors { get; private set; } = new();
 
         public float[] FrameTimes { get; private set; } = new float[1];
         public int[] FramesForTimes { get; private set; } = new int[1];
@@ -306,11 +309,12 @@ namespace ReplayCapture
         public Dictionary<Entity, Dictionary<string, List<DynamicParamTimeEntry>>> EntityDynamicParams { get; private set; } = new();
         public FrameStampedListDict<Entity, (string, float)> EntityDynamicValues { get; private set; } = new();
 
+        public Dictionary<Entity, List<int>> LogEntityFrameMarkers = new();
 
         public enum EntityDrawCommandType { None, Line, Circle, Sphere, Box, Capsule, Mesh };
         public record EntityDrawCommand
         {
-            public Entity entity;
+            public EntityEx entity;
             public string category;
             public EntityDrawCommandType type;
             public Color color;
@@ -418,6 +422,7 @@ namespace ReplayCapture
                             {
                                 Entities.Add(entitydef);
                             }
+                            EntityCategories.Add(entitydef.CategoryName);
                         }
                         EntityEx entity = (id > 0) ? Entities[id - 1] : null;
 
@@ -455,7 +460,17 @@ namespace ReplayCapture
                                     reader.Read(out Color color);
                                     entity.HasLogs = true;
                                     entity.HasLogsPastFirstFrame |= frame > entity.CreationFrame;
+                                    LogCategories.Add(category);
+                                    LogColors.Add(color);
                                     LogEntries.AddForBake(frame, (entity, category, msg, color));
+
+                                    // Add per entity frame markers
+                                    if (!LogEntityFrameMarkers.TryGetValue(entity, out var framesWithLogs)) 
+                                    { 
+                                        framesWithLogs = new();
+                                        LogEntityFrameMarkers.Add(entity,framesWithLogs);
+                                    }
+                                    if (framesWithLogs.Count == 0 || framesWithLogs.Last() != frame) { framesWithLogs.Add(frame); }
                                 }
                                 break;
                             case BlockType.EntityParameter:
@@ -480,8 +495,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p1);
                                     reader.Read(out Point p2);
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Line, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCircle:
@@ -491,8 +505,7 @@ namespace ReplayCapture
                                     reader.Read(out Point up);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Circle, color = color, frame = frame, xform = new Transform() { Translation = center }, p2 = up, scale = radius });
                                 }
                                 break;
                             case BlockType.EntitySphere:
@@ -501,8 +514,7 @@ namespace ReplayCapture
                                     reader.Read(out Point center);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Sphere, color = color, frame = frame, xform = new Transform() { Translation = center }, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityBox:
@@ -511,8 +523,7 @@ namespace ReplayCapture
                                     reader.Read(out Transform xform);
                                     reader.Read(out Point dimensions);
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Box, color = color, frame = frame, xform = xform, p2 = dimensions, scale = 1 });
                                 }
                                 break;
                             case BlockType.EntityCapsule:
@@ -522,8 +533,7 @@ namespace ReplayCapture
                                     reader.Read(out Point p2);
                                     float radius = reader.ReadSingle();
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Capsule, color = color, frame = frame, xform = new Transform() { Translation = p1 }, p2 = p2, scale = radius });
                                 }
                                 break;
                             case BlockType.EntityMesh:
@@ -533,9 +543,8 @@ namespace ReplayCapture
                                     Point[] verts = new Point[vertexCount];
                                     for(int i = 0; i < vertexCount; ++i) { reader.Read(out Point p); verts[i] = p; }
                                     reader.Read(out Color color);
-                                    entity.HasDraws = true;
                                     entity.HasMesh = true;
-                                    DrawCommands.AddForBake(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
+                                    AddDrawCommand(frame, new EntityDrawCommand() { entity = entity, category = category, type = EntityDrawCommandType.Mesh, verts = verts, color = color, frame = frame });
                                 }
                                 break;
                         }
@@ -553,6 +562,14 @@ namespace ReplayCapture
             EntitySetTransforms.Bake();
             EntityDynamicParamsCombined.Bake();
             EntityDynamicValues.Bake();
+        }
+
+        private void AddDrawCommand(int frame, EntityDrawCommand dc)
+        {
+            DrawColors.Add(dc.color);
+            if (!dc.IsCreationDraw) DrawCategories.Add(dc.category);
+            DrawCommands.AddForBake(frame, dc);
+            dc.entity.HasDraws = true;
         }
     }
 

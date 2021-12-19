@@ -31,8 +31,8 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(showStackedByParameterDepth);
 
             var cb = new CheckComboBoxControl("Parameters");
-            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.GetParameterCategories(), true);
-            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.GetParameterCategories(), true);
+            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.ParameterCategories, true);
+            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.ParameterCategories, true);
             cb.Changed += () => propertiesTimelinesView.ParameterFilter.Set(cb.UnselectedItems);
             ToolBar.Items.Add(cb);
 

@@ -30,7 +30,7 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(filtertext);
 
             var cb = new CheckComboBoxControl("Entity Categories");
-            mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.GetEntityCategories(), true); };
+            mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.EntityCategories, true); };
             cb.Changed += () => entityTimelineView.TimelineEntityCategoryFilter.Set(cb.UnselectedItems);
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(cb);

@@ -59,14 +59,14 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(new Separator());
 
             var cb = new CheckComboBoxControl("Draw Categories");
-            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.GetDrawCategories(), true);
-            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.GetDrawCategories(), true);
+            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.DrawCategories, true);
+            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.DrawCategories, true);
             cb.Changed += () => replayViewport3d.DrawCategoryFilter.Set(cb.UnselectedItems);
             ToolBar.Items.Add(cb);
 
             var cb2 = new CheckComboBoxControl("Draw Colors");
-            if (mainwindow.Replay != null) cb2.SetItems(mainwindow.Replay.GetDrawColors().Select(x => x.ToString()), true);
-            mainwindow.ReplayChanged += (replay) => cb2.SetItems(replay.GetDrawColors().Select(x => x.ToString()), true);
+            if (mainwindow.Replay != null) cb2.SetItems(mainwindow.Replay.DrawColors.Select(x => x.ToString()), true);
+            mainwindow.ReplayChanged += (replay) => cb2.SetItems(replay.DrawColors.Select(x => x.ToString()), true);
             cb2.Changed += () => replayViewport3d.DrawColorFilter.Set(cb2.UnselectedItems.Select(x => x.ToColor()));
             ToolBar.Items.Add(cb2);
 

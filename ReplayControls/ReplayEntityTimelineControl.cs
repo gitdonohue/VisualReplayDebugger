@@ -26,7 +26,7 @@ namespace VisualReplayDebugger
 
         double startRatio;
         double endRatio;
-        List<double> markerPositions;
+        double[] markerPositions = new double[0];
 
         FormattedText formattedText;
         ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
@@ -44,10 +44,10 @@ namespace VisualReplayDebugger
             startRatio = Replay.GetTimeForFrame(lifetime.Start) / totalTime;
             endRatio = Replay.GetTimeForFrame(lifetime.End) / totalTime;
 
-            markerPositions = new();
-            foreach (int frame in Replay.LogEntries.Where(x=>x.Item2.Item1 == entity).Select(x=>x.Item1).Distinct())
+            //markerPositions = Replay.LogEntries.Where(x => x.Item2.Item1 == entity).Select(x => x.Item1).Distinct().Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();
+            if (Replay.LogEntityFrameMarkers.TryGetValue(entity, out var lst))
             {
-                markerPositions.Add( Replay.GetTimeForFrame(frame) / totalTime );
+                markerPositions = lst.Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();
             }
 
             formattedText = new FormattedText($"{entity.Path}",

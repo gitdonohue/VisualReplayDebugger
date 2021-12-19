@@ -37,15 +37,15 @@ namespace VisualReplayDebugger.Panels
             ToolBar.Items.Add(filtertext);
 
             var cb = new CheckComboBoxControl("Log Categories");
-            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.GetLogCategories(), true);
-            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.GetLogCategories(), true);
+            if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.LogCategories, true);
+            mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.LogCategories, true);
             cb.Changed += () => replayLogsView.LogCategoryFilter.Set(cb.UnselectedItems);
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(cb);
 
             var cb2 = new CheckComboBoxControl("Log Colors");
-            if (mainwindow.Replay != null) cb2.SetItems(mainwindow.Replay.GetLogColors().Select(x => x.ToString()), true);
-            mainwindow.ReplayChanged += (replay) => cb2.SetItems(replay.GetLogColors().Select(x=>x.ToString()), true);
+            if (mainwindow.Replay != null) cb2.SetItems(mainwindow.Replay.LogColors.Select(x => x.ToString()), true);
+            mainwindow.ReplayChanged += (replay) => cb2.SetItems(replay.LogColors.Select(x=>x.ToString()), true);
             cb2.Changed += () => replayLogsView.LogColorFilter.Set(cb2.UnselectedItems.Select(x=>x.ToColor()));
             ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(cb2);
