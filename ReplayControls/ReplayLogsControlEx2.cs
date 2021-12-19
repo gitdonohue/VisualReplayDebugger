@@ -86,10 +86,10 @@ namespace VisualReplayDebugger
             
             this.IsVisibleChanged += (o, e) => RefreshLogs();
 
-            //this.MouseDown += OnMouseDown;
-            EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
-            //this.MouseDoubleClick += OnMouseDoubleClick;
-            EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
+            this.MouseDown += OnMouseDown;
+            //EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
+            this.MouseDoubleClick += OnMouseDoubleClick;
+            //EventManager.RegisterClassHandler(typeof(Control), MouseDoubleClickEvent, new RoutedEventHandler(MouseDoubleClickHandler)); // Workaround for missing mouse events
 
             SelectionSpans.Changed += InvalidateVisualLocal;
 
