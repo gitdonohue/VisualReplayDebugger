@@ -227,13 +227,15 @@ namespace ReplayCapture
 
         public struct DynamicParamTimeEntry
         {
+            public ReplayCaptureReader replay;
             public string name;
             public string val;
             public int frame;
-            public double time;
             public int depth;
 
             public IEnumerable<string> SplitValues => string.IsNullOrEmpty(val) ? Enumerable.Empty<string>() : val.Split(SplitSeparators);
+
+            public double time => replay.GetTimeForFrame(frame);
         }
 
         private void AddToDynamicPropertiesTable(Entity entity, int frame, string param, string val)
@@ -254,7 +256,7 @@ namespace ReplayCapture
             }
             if ( lst.Count == 0 || lst.Last().val != val ) // Filter out redundant param sets
             {
-                lst.Add(new DynamicParamTimeEntry() { name = param, frame = frame, val = val, time = this.GetTimeForFrame(frame), depth = string.IsNullOrEmpty(val) ? 0 : (val.Split(SplitSeparators).Length - 1) });
+                lst.Add(new DynamicParamTimeEntry() { replay = this, name = param, frame = frame, val = val, depth = string.IsNullOrEmpty(val) ? 0 : (val.Split(SplitSeparators).Length - 1) });
             }
         }
 
