@@ -288,8 +288,8 @@ namespace VisualReplayDebugger
             {
                 foreach ((Entity entity, string param, var entryList) in EnumerateSelectedEntitiesPropertiesChannels())
                 {
-                    int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).Min();
-                    int maxDepth = entryList.Select(x => x.depth).Max();
+                    int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min();
+                    int maxDepth = entryList.Select(x => x.depth).DefaultIfEmpty().Max();
                     rowCount += maxDepth - minDepth + 1;
                 }
                 
@@ -363,8 +363,8 @@ namespace VisualReplayDebugger
                 }
                 else
                 {
-                    int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).Min();
-                    int maxDepth = entryList.Select(x => x.depth).Max();
+                    int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min();
+                    int maxDepth = entryList.Select(x => x.depth).DefaultIfEmpty().Max();
                     for (int depth = minDepth; depth <= maxDepth; ++depth)
                     {
                         foreach ((int index, double t1, double t2, double rt1, double rt2, string val, string fullVal) in EnumerateRangesAtDepth(entryList, TimelineWindow.Start, TimelineWindow.End, depth))
