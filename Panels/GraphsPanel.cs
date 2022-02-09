@@ -1,7 +1,7 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
-using FontAwesome.WPF;
+using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,33 +23,33 @@ namespace VisualReplayDebugger.Panels
 
             mainwindow.ReplayChanged += (replay) => graphView.Replay = replay;
 
-            var showFilled = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.AreaChart), ToolTip = "Show filled" };
+            var showFilled = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Fill), ToolTip = "Show filled" };
             showFilled.BindTo(graphView.GraphsFilled);
             ToolBar.Items.Add(showFilled);
 
-            var showStackedByEntity = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Bars), ToolTip = "Show stacked by entity" };
+            var showStackedByEntity = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Bars), ToolTip = "Show stacked by entity" };
             showStackedByEntity.BindTo(graphView.GraphsStackedByEntity);
             ToolBar.Items.Add(showStackedByEntity);
 
-            var showStackedByParameter = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.EllipsisV), ToolTip = "Show stacked by parameter" };
+            var showStackedByParameter = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.EllipsisV), ToolTip = "Show stacked by parameter" };
             showStackedByParameter.BindTo(graphView.GraphsStackedByParameter);
             ToolBar.Items.Add(showStackedByParameter);
 
-            var showStackedByParameterDepth = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.SortNumericAsc), ToolTip = "Show stacked by parameter depth" };
+            var showStackedByParameterDepth = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.SortAlphaDown), ToolTip = "Show stacked by parameter depth" };
             showStackedByParameterDepth.BindTo(graphView.GraphsStackedByParameterDepth);
             ToolBar.Items.Add(showStackedByParameterDepth);
 
-            var autoScale = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.ArrowsV), ToolTip = "Autoscale" };
+            var autoScale = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowsAltH), ToolTip = "Autoscale" };
             autoScale.BindTo(graphView.Autoscale);
             ToolBar.Items.Add(autoScale);
 
             ToolBar.Items.Add(new Separator());
 
-            var lockEntitySelection = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
+            var lockEntitySelection = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
             lockEntitySelection.BindTo(graphView.EntitySelectionLocked);
             ToolBar.Items.Add(lockEntitySelection);
 
-            var duplicatePanel = new Button() { Content = GetIcon(FontAwesomeIcon.LevelUp), ToolTip = "Duplicate Panel" };
+            var duplicatePanel = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.AngleUp), ToolTip = "Duplicate Panel" };
             duplicatePanel.Click += (o,e) => mainwindow.DuplicatePanel(mainwindow.GraphsWindow);
             ToolBar.Items.Add(duplicatePanel);
         }

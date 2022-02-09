@@ -1,4 +1,4 @@
-﻿using FontAwesome.WPF;
+﻿using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,14 +19,14 @@ namespace VisualReplayDebugger.Panels
 
             mainwindow.ReplayChanged += (replay) => propertiesTimelinesView.Replay = replay;
 
-            var filterLabel = new Label() { Content = GetIcon(FontAwesomeIcon.Filter) };
+            var filterLabel = new Label() { Content = IconProvider.GetIcon(FontAwesomeIcon.Filter) };
             ToolBar.Items.Add(filterLabel);
 
             var filtertext = new TextBox() { Width = 150 };
             filtertext.BindTo(propertiesTimelinesView.FilterText);
             ToolBar.Items.Add(filtertext);
 
-            var showStackedByParameterDepth = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.SortNumericAsc), ToolTip = "Show stacked by parameter depth" };
+            var showStackedByParameterDepth = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.SortAlphaUpAlt), ToolTip = "Show stacked by parameter depth" };
             showStackedByParameterDepth.BindTo(propertiesTimelinesView.StackedByParameterDepth);
             ToolBar.Items.Add(showStackedByParameterDepth);
 
@@ -38,25 +38,25 @@ namespace VisualReplayDebugger.Panels
 
             ToolBar.Items.Add(new Separator());
 
-            var prev = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowLeft), ToolTip = "Move to previous event" };
+            var prev = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowLeft), ToolTip = "Move to previous event" };
             prev.Click += (o, e) => propertiesTimelinesView.MoveToPrevEvent();
             ToolBar.Items.Add(prev);
 
-            var next = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowRight), ToolTip = "Move to next event" };
+            var next = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowRight), ToolTip = "Move to next event" };
             next.Click += (o, e) => propertiesTimelinesView.MoveToNextEvent();
             ToolBar.Items.Add(next);
 
-            var zoomSmallest = new Button() { Content = GetIcon(FontAwesomeIcon.Compress), ToolTip = "Zoom on smallest block" };
+            var zoomSmallest = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.Compress), ToolTip = "Zoom on smallest block" };
             zoomSmallest.Click += (o, e) => propertiesTimelinesView.ZoomSmallestOnCursor();
             ToolBar.Items.Add(zoomSmallest);
 
             ToolBar.Items.Add(new Separator());
 
-            var lockEntitySelection = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
+            var lockEntitySelection = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
             lockEntitySelection.BindTo(propertiesTimelinesView.EntitySelectionLocked);
             ToolBar.Items.Add(lockEntitySelection);
 
-            var duplicatePanel = new Button() { Content = GetIcon(FontAwesomeIcon.LevelUp), ToolTip = "Duplicate Panel" };
+            var duplicatePanel = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.AngleUp), ToolTip = "Duplicate Panel" };
             duplicatePanel.Click += (o, e) => mainwindow.DuplicatePanel(mainwindow.PropertiesTimelinesWindow);
             ToolBar.Items.Add(duplicatePanel);
         }

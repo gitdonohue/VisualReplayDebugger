@@ -1,7 +1,7 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
-using FontAwesome.WPF;
+using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,33 +26,33 @@ namespace VisualReplayDebugger.Panels
 
             replayViewport3d.FollowCameraEnabled.Changed += () => mainwindow.Play.Set(false);
 
-            var cam_follow = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.VideoCamera), ToolTip = "Follow main camera" };
+            var cam_follow = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Camera), ToolTip = "Follow main camera" };
             cam_follow.BindTo(replayViewport3d.FollowCameraEnabled);
             ToolBar.Items.Add(cam_follow);
 
-            var focusOnSelected = new Button() { Content = GetIcon(FontAwesomeIcon.Binoculars), ToolTip = "Focus on selection (F2)" };
+            var focusOnSelected = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.Binoculars), ToolTip = "Focus on selection (F2)" };
             focusOnSelected.Click += (o, e) => mainwindow.TriggerFocusOnSelected();
             ToolBar.Items.Add(focusOnSelected);
 
-            var selection_follow = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), ToolTip = "Follow selection" };
+            var selection_follow = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Eye), ToolTip = "Follow selection" };
             selection_follow.BindTo(replayViewport3d.FollowSelectionEnabled);
             ToolBar.Items.Add(selection_follow);
 
             ToolBar.Items.Add(new Separator());
 
-            var showAllNames = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Font), ToolTip = "Show all entity names" };
+            var showAllNames = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Font), ToolTip = "Show all entity names" };
             showAllNames.BindTo(replayViewport3d.ShowAllNames);
             ToolBar.Items.Add(showAllNames);
 
-            var showAllPaths = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Car), ToolTip = "Show all entity paths" };
+            var showAllPaths = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Car), ToolTip = "Show all entity paths" };
             showAllPaths.BindTo(replayViewport3d.ShowAllPaths);
             ToolBar.Items.Add(showAllPaths);
 
-            var showPrimitives = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.PaintBrush), ToolTip = "Show draw primitives" };
+            var showPrimitives = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.PaintBrush), ToolTip = "Show draw primitives" };
             showPrimitives.BindTo(replayViewport3d.ShowDrawPrimitives);
             ToolBar.Items.Add(showPrimitives);
 
-            var showPrimitivesInRange = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.ArrowsH), ToolTip = "Show all draw primitives in range" };
+            var showPrimitivesInRange = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.ExchangeAlt), ToolTip = "Show all draw primitives in range" };
             showPrimitivesInRange.BindTo(replayViewport3d.ShowAllDrawPrimitivesInRange);
             ToolBar.Items.Add(showPrimitivesInRange);
 
@@ -72,7 +72,7 @@ namespace VisualReplayDebugger.Panels
 
             ToolBar.Items.Add(new Separator());
             
-            var duplicatePanel = new Button() { Content = GetIcon(FontAwesomeIcon.LevelUp), ToolTip = "Duplicate Panel" };
+            var duplicatePanel = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.AngleUp), ToolTip = "Duplicate Panel" };
             duplicatePanel.Click += (o, e) => mainwindow.DuplicatePanel(mainwindow.ViewportWindow);
             ToolBar.Items.Add(duplicatePanel);
         }

@@ -1,7 +1,7 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
-using FontAwesome.WPF;
+using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,26 +26,26 @@ namespace VisualReplayDebugger.Panels
 
             var filtertext = new TextBox() { Width = 150 };
             filtertext.BindTo(entityTimelineView.FilterText);
-            ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
+            ToolBar.Items.Add(new Label() { Content = IconProvider.GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(filtertext);
 
             var cb = new CheckComboBoxControl("Entity Categories");
             mainwindow.ReplayChanged += (replay) => { cb.SetItems(replay.EntityCategories, true); };
             cb.Changed += () => entityTimelineView.TimelineEntityCategoryFilter.Set(cb.UnselectedItems);
-            ToolBar.Items.Add(new Label() { Content = GetIcon(FontAwesomeIcon.Filter) });
+            ToolBar.Items.Add(new Label() { Content = IconProvider.GetIcon(FontAwesomeIcon.Filter) });
             ToolBar.Items.Add(cb);
 
             ToolBar.Items.Add(new Separator());
 
-            var showAll = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show Hidden Entities" };
+            var showAll = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show Hidden Entities" };
             showAll.BindTo(entityTimelineView.ShowAllEntities);
             ToolBar.Items.Add(showAll);
 
-            var zoomRange = new Button() { Content = GetIcon(FontAwesomeIcon.ArrowsH), ToolTip = "Set time range to selected" };
+            var zoomRange = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowsAltH), ToolTip = "Set time range to selected" };
             zoomRange.Click += (o, e) => mainwindow.SetTimeRangeToSelected();
             ToolBar.Items.Add(zoomRange);
 
-            var clearSelection = new Button() { Content = GetIcon(FontAwesomeIcon.WindowClose), ToolTip = "Clear selection" };
+            var clearSelection = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.WindowClose), ToolTip = "Clear selection" };
             clearSelection.Click += (o, e) => { mainwindow.EntitySelection.Clear(); };
             ToolBar.Items.Add(clearSelection);
         }

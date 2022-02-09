@@ -10,13 +10,13 @@ using ReplayCapture;
 using WatchedVariable;
 using Timeline;
 using TimelineControls;
-using FontAwesome.WPF;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using VisualReplayDebugger.Panels;
-using AvalonDock.Layout.Serialization;
+
+using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 
 namespace VisualReplayDebugger
 {
@@ -232,20 +232,20 @@ namespace VisualReplayDebugger
         {
             const int h = 24;
 
-            var rewindButton = new Button() { Content = GetIcon(FontAwesomeIcon.FastBackward), Width = h, Height = h };
+            var rewindButton = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.FastBackward), Width = h, Height = h };
             rewindButton.Click += (o, e) => { TimelineController.Rewind(); };
             TimeControlsPanel.Children.Add(rewindButton);
 
-            var step_bwd = new Button() { Content = GetIcon(FontAwesomeIcon.StepBackward), Width = h, Height = h };
+            var step_bwd = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.StepBackward), Width = h, Height = h };
             step_bwd.Click += (o, e) => stepFrameReverse();
             TimeControlsPanel.Children.Add(step_bwd);
 
-            var playButton = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Play), Width = h, Height = h };
+            var playButton = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Play), Width = h, Height = h };
             playButton.Click += (o, e) => { Play.Set(playButton.IsChecked.Value); };
-            Play.Changed += () => { playButton.IsChecked = Play; playButton.Content = GetIcon(Play ? FontAwesomeIcon.Stop : FontAwesomeIcon.Play); };
+            Play.Changed += () => { playButton.IsChecked = Play; playButton.Content = IconProvider.GetIcon(Play ? FontAwesomeIcon.Stop : FontAwesomeIcon.Play); };
             TimeControlsPanel.Children.Add(playButton);
 
-            var step_fwd = new Button() { Content = GetIcon(FontAwesomeIcon.StepForward), Width = h, Height = h };
+            var step_fwd = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.StepForward), Width = h, Height = h };
             step_fwd.Click += (o, e) => stepFrameForward();
             TimeControlsPanel.Children.Add(step_fwd);
 
@@ -271,9 +271,6 @@ namespace VisualReplayDebugger
             TimeScrubPanel.Children.Add(timelineViewBottom);
             TimeScrubPanel.Children.Add(timelineWindowViewBottom);
         }
-
-
-        public static Image GetIcon(FontAwesomeIcon icon, int width = 14, int height = 14) => new ImageAwesome { Icon = icon, Width = width, Height = height };
 
         public void LoadReplay(string path)
         {

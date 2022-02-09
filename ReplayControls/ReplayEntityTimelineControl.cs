@@ -1,7 +1,8 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
-using FontAwesome.WPF;
+//using FontAwesome.WPF;
+using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using ReplayCapture;
 using System;
 using System.Collections.Generic;
@@ -136,8 +137,8 @@ namespace VisualReplayDebugger
         {
             Entity = entity;
 
-            var visibilityBtn = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Eye), Width = 16, Height = 16 };
-            Visible.Changed += () => { visibilityBtn.Content = GetIcon(Visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash); };
+            var visibilityBtn = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Eye), Width = 16, Height = 16 };
+            Visible.Changed += () => { visibilityBtn.Content = IconProvider.GetIcon(Visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash); };
             visibilityBtn.BindTo(Visible);
             this.Children.Add(visibilityBtn);
 
@@ -185,7 +186,5 @@ namespace VisualReplayDebugger
                 ReplayEntitiesTimelinesView.VisibleEntities.Remove(Entity);
             }
         }
-
-        public static Image GetIcon(FontAwesomeIcon icon, int width = 12, int height = 12) => new ImageAwesome { Icon = icon, Width = width, Height = height };
     }
 }

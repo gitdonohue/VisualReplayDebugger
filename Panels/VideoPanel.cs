@@ -1,4 +1,4 @@
-﻿using FontAwesome.WPF;
+﻿using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +20,11 @@ namespace VisualReplayDebugger.Panels
             VideoControl = new VideoControl(mainWindow.TimelineWindow);
             this.Content = VideoControl;
 
-            var load = new Button() { Content = GetIcon(FontAwesomeIcon.FileMovieOutline), ToolTip = "Load video" };
+            var load = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.CameraRetro), ToolTip = "Load video" };
             load.Click += (o, e) => VideoControl.LoadMovie();
             ToolBar.Items.Add(load);
 
-            var sync = new ToggleButton() { Content = GetIcon(FontAwesomeIcon.Lock), ToolTip = "Sync video to timeline" };
+            var sync = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Lock), ToolTip = "Sync video to timeline" };
             sync.BindTo(VideoControl.SyncLock);
             ToolBar.Items.Add(sync);
         }
