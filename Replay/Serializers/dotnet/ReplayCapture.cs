@@ -393,7 +393,7 @@ namespace ReplayCapture
         public string TypeName;
         public string CategoryName;
         public Transform InitialTransform;
-        public Dictionary<string, string> StaticParameters;
+        public Dictionary<string, string> StaticParameters = new();
         public int CreationFrame;
     }
 

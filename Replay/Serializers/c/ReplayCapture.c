@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #include "ReplayCapture.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +13,7 @@
 #endif
 
 #ifdef VRD_USE_ZLIB
-#include "zlib.h"
+#include "ThirdParty/zlib/zlib-1.2.5/Inc/zlib.h"
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
@@ -22,9 +23,9 @@
 #endif
 #endif //VRD_USE_ZLIB
 
-typedef struct VRD_EntityMapItem_s { long address; } VRD_EntityMapItem;
+struct VRD_EntityMapItem { entityKeyType address; };
 
-typedef struct VRD_replay_context_s
+struct VRD_replay_context
 {
 	int status;
 	FILE* fp;
@@ -38,9 +39,9 @@ typedef struct VRD_replay_context_s
 	void* z_compression_buffer;
 #endif
 
-} VRD_replay_context;
+};
 
-int VRD_Internal_EntityMap(VRD_replay_context* ctx, long entityId);
+int VRD_Internal_EntityMap(VRD_replay_context* ctx, entityKeyType entityAddr);
 void VRD_Internal_WriteReplayHeader(VRD_replay_context* ctx);
 void VRD_Internal_WriteEntityDef(VRD_replay_context* ctx, int entityId, int frame, const char* name, const char* path, const char* type_name, const char* category_name, VRD_Transform* xform, VRD_StringDictPair* staticParams, int staticParamsCount);
 void VRD_Internal_WriteEntityUndef(VRD_replay_context* ctx, int entityId, int frame);
@@ -62,7 +63,7 @@ VRD_replay_context* VRD_CreateContext(const char* filename, int compressed)
 	FILE* fp;
 	if (fopen_s(&fp, filename, "wb") != 0) return 0;
 
-	VRD_replay_context* ctx = (VRD_replay_context*) malloc(sizeof(VRD_replay_context));
+	VRD_replay_context* ctx = (VRD_replay_context*)malloc(sizeof(VRD_replay_context));
 	if (ctx)
 	{
 		memset(ctx, 0, sizeof(VRD_replay_context));
@@ -105,91 +106,91 @@ void VRD_ReleaseContext(VRD_replay_context* ctx)
 	}
 }
 
-void VRD_RegisterEntity(VRD_replay_context* ctx, long entityId, const char* name, const char* path, const char* type_name, const char* category_name, VRD_Transform* transform, VRD_StringDictPair* staticParams, int staticParamsCount)
+void VRD_RegisterEntity(VRD_replay_context* ctx, entityKeyType entityId, const char* name, const char* path, const char* type_name, const char* category_name, VRD_Transform* transform, VRD_StringDictPair* staticParams, int staticParamsCount)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_WriteEntityDef(ctx, id, ctx->frame, name, path, type_name, category_name, transform, staticParams, staticParamsCount);
 }
 
-void VRD_UnRegisterEntity(VRD_replay_context* ctx, long entityId)
+void VRD_UnRegisterEntity(VRD_replay_context* ctx, entityKeyType entityId)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_WriteEntityUndef(ctx, id, ctx->frame);
 }
 
-void VRD_SetLog(VRD_replay_context* ctx, long entityId, const char* log, const char* category, enum VRD_Color color)
+void VRD_SetLog(VRD_replay_context* ctx, entityKeyType entityId, const char* log, const char* category, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_WriteEntityLog(ctx, id, ctx->frame, log, category, color);
 }
 
-void VRD_SetPosition(VRD_replay_context* ctx, long entityId, VRD_Point* pos)
+void VRD_SetPosition(VRD_replay_context* ctx, entityKeyType entityId, VRD_Point* pos)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_WriteEntityPosition(ctx, id, ctx->frame, pos);
 }
 
-void VRD_SetTransform(VRD_replay_context* ctx, long entityId, VRD_Transform* xform)
+void VRD_SetTransform(VRD_replay_context* ctx, entityKeyType entityId, VRD_Transform* xform)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_WriteEntityTransform(ctx, id, ctx->frame, xform);
 }
 
-void VRD_SetDynamicParamString(VRD_replay_context* ctx, long entityId, const char* key, const char* val)
+void VRD_SetDynamicParamString(VRD_replay_context* ctx, entityKeyType entityId, const char* key, const char* val)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_SetDynamicParamString(ctx, id, ctx->frame, key, val);
 }
 
-void VRD_SetDynamicParamFloat(VRD_replay_context* ctx, long entityId, const char* key, float val)
+void VRD_SetDynamicParamFloat(VRD_replay_context* ctx, entityKeyType entityId, const char* key, float val)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_SetDynamicParamFloat(ctx, id, ctx->frame, key, val);
 }
 
-void VRD_DrawSphere(VRD_replay_context* ctx, long entityId, const char* category, VRD_Point* pos, float radius, enum VRD_Color color)
+void VRD_DrawSphere(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Point* pos, float radius, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_DrawSphere(ctx, id, ctx->frame, category, pos, radius, color);
 }
 
-void VRD_DrawBox(VRD_replay_context* ctx, long entityId, const char* category, VRD_Transform* xform, VRD_Point* dimensions, enum VRD_Color color)
+void VRD_DrawBox(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Transform* xform, VRD_Point* dimensions, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_DrawBox(ctx, id, ctx->frame, category, xform, dimensions, color);
 }
 
-void VRD_DrawCapsule(VRD_replay_context* ctx, long entityId, const char* category, VRD_Point* p1, VRD_Point* p2, float radius, enum VRD_Color color)
+void VRD_DrawCapsule(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Point* p1, VRD_Point* p2, float radius, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_DrawCapsule(ctx, id, ctx->frame, category, p1, p2, radius, color);
 }
 
-void VRD_DrawMesh(VRD_replay_context* ctx, long entityId, const char* category, VRD_Point* verts, int vertCount, enum VRD_Color color)
+void VRD_DrawMesh(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Point* verts, int vertCount, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_DrawMesh(ctx, id, ctx->frame, category, verts, vertCount, color);
 }
 
-void VRD_DrawLine(VRD_replay_context* ctx, long entityId, const char* category, VRD_Point* p1, VRD_Point* p2, enum VRD_Color color)
+void VRD_DrawLine(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Point* p1, VRD_Point* p2, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
 	VRD_Internal_DrawLine(ctx, id, ctx->frame, category, p1, p2, color);
 }
 
-void VRD_DrawCircle(VRD_replay_context* ctx, long entityId, const char* category, VRD_Point* position, VRD_Point* up, float radius, enum VRD_Color color)
+void VRD_DrawCircle(VRD_replay_context* ctx, entityKeyType entityId, const char* category, VRD_Point* position, VRD_Point* up, float radius, enum VRD_Color color)
 {
 	if (ctx == 0 || ctx->status == 0) return;
 	int id = VRD_Internal_EntityMap(ctx, entityId);
@@ -199,7 +200,7 @@ void VRD_DrawCircle(VRD_replay_context* ctx, long entityId, const char* category
 void VRD_StepFrame(VRD_replay_context* ctx, float totalTime)
 {
 	if (ctx == 0 || ctx->status == 0) return;
-	VRD_Internal_WriteFrameStep(ctx,totalTime);
+	VRD_Internal_WriteFrameStep(ctx, totalTime);
 	ctx->frame += 1;
 }
 
@@ -229,10 +230,12 @@ enum VRD_BlockType
 };
 
 
-int VRD_Internal_EntityMap(VRD_replay_context* ctx, long entityId)
+int VRD_Internal_EntityMap(VRD_replay_context* ctx, entityKeyType entityAddr)
 {
 	if (ctx == 0 || ctx->status == 0) return -1;
-	
+
+	if (sizeof(entityKeyType) == sizeof(int)) return (entityAddr + 1); // No need to map if key is 32 bits
+
 	// Note: This could be replaced with a hash-map
 	// *BUT* if this becomes a bottleneck, it means we have way too many entities
 
@@ -243,36 +246,36 @@ int VRD_Internal_EntityMap(VRD_replay_context* ctx, long entityId)
 		int nb = ctx->entity_map_count;
 		for (int i = 0; i < nb; ++i)
 		{
-			if (it->address == entityId) return (i+1);
+			if (it->address == entityAddr) return (i + 1);
 			++it;
 		}
 	}
 	// Not found
-	
+
 	// Make sure there is room in the map
-	const int entityMapGrowthSize = 16<<10;
+	const int entityMapGrowthSize = 16 << 10;
 	if (ctx->entity_map == 0)
 	{
-		ctx->entity_map = malloc(entityMapGrowthSize * sizeof(VRD_EntityMapItem));
+		ctx->entity_map = static_cast<VRD_EntityMapItem*>(malloc(entityMapGrowthSize * sizeof(VRD_EntityMapItem)));
 		ctx->entity_map_capacity = entityMapGrowthSize;
 		ctx->entity_map_count = 0;
 	}
 	else if (ctx->entity_map_count >= ctx->entity_map_capacity)
 	{
 		VRD_EntityMapItem* orig = ctx->entity_map;
-		ctx->entity_map = realloc(orig, (ctx->entity_map_capacity + entityMapGrowthSize) * sizeof(VRD_EntityMapItem));
+		ctx->entity_map = static_cast<VRD_EntityMapItem*>(realloc(orig, (ctx->entity_map_capacity + entityMapGrowthSize) * sizeof(VRD_EntityMapItem)));
 		// TODO: handle realloc fail here.
 		ctx->entity_map_capacity += entityMapGrowthSize;
 	}
 
 	// insert in map
-	VRD_EntityMapItem addr = { entityId };
+	VRD_EntityMapItem addr = { entityAddr };
 	if (ctx->entity_map != 0)
 	{
 		int index = ctx->entity_map_count;
 		ctx->entity_map[index] = addr;
 		ctx->entity_map_count += 1;
-		return (index+1);
+		return (index + 1);
 	}
 
 	return -1;
@@ -318,7 +321,7 @@ void VRD_Internal_Write7BitEncodedInt(VRD_replay_context* ctx, int value)
 		VRD_Internal_WriteChar(ctx, (char)(num | 0x80));
 		num = num >> 7;
 	}
-	VRD_Internal_WriteChar(ctx,(char)num);
+	VRD_Internal_WriteChar(ctx, (char)num);
 }
 
 void VRD_Internal_WriteColor(VRD_replay_context* ctx, enum VRD_Color color)
@@ -337,7 +340,7 @@ void VRD_Internal_WriteString(VRD_replay_context* ctx, const char* s)
 	}
 }
 
-static VRD_Point VRD_PointZero = {0,0,0};
+static VRD_Point VRD_PointZero = { 0,0,0 };
 static VRD_Transform VRD_Identity = { {0,0,0},{0,0,0,1} };
 
 void VRD_Internal_WritePoint(VRD_replay_context* ctx, VRD_Point* point)
@@ -370,7 +373,11 @@ void VRD_Internal_WriteTransform(VRD_replay_context* ctx, VRD_Transform* xform)
 
 void VRD_Internal_WriteReplayHeader(VRD_replay_context* ctx)
 {
+#ifdef VRD_USE_ZLIB
 	VRD_Internal_Write7BitEncodedInt(ctx, ReplayHeader);
+#else
+	VRD_Internal_WriteInt(ctx, ReplayHeader);
+#endif
 }
 
 void VRD_Internal_WriteEntityHeader(VRD_replay_context* ctx, enum VRD_BlockType blockType, int entityId, int frame)
@@ -390,7 +397,7 @@ void VRD_Internal_WriteEntityDef(VRD_replay_context* ctx, int entityId, int fram
 {
 	VRD_Internal_WriteEntityHeader(ctx, EntityDef, entityId, frame);
 	VRD_Internal_Write7BitEncodedInt(ctx, entityId);
-	
+
 	VRD_Internal_WriteString(ctx, name);
 	VRD_Internal_WriteString(ctx, path);
 	VRD_Internal_WriteString(ctx, type_name);
@@ -403,7 +410,7 @@ void VRD_Internal_WriteEntityDef(VRD_replay_context* ctx, int entityId, int fram
 		VRD_Internal_WriteString(ctx, staticParams[i].value);
 	}
 	VRD_Internal_Write7BitEncodedInt(ctx, frame);
-	
+
 }
 
 void VRD_Internal_WriteEntityUndef(VRD_replay_context* ctx, int entityId, int frame)

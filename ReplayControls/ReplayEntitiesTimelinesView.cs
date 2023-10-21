@@ -100,7 +100,7 @@ namespace VisualReplayDebugger
             if (replay != null)
             {
                 var filter = new SearchContext(FilterText.Value);
-                foreach (var entity in replay.Entities)
+                foreach (var entity in replay.Entities.Values)
                 {
                     if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
