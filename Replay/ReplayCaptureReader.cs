@@ -430,9 +430,17 @@ public class ReplayCaptureReader
                     int frame = reader.Read7BitEncodedInt();
                     int id = reader.Read7BitEncodedInt();
                     EntityEx? entity = null;
-                    if (blockType == BlockType.EntityDef)
+
+                    int parentId = -1;
+                    if (blockType == BlockType.EntityDefWithParent)
+                    {
+                        parentId = reader.Read7BitEncodedInt();
+                    }
+
+                    if (blockType == BlockType.EntityDef || blockType == BlockType.EntityDefWithParent)
                     {
                         reader.Read(out EntityEx entitydef);
+                        entitydef.ParentId = parentId;
                         entity = entitydef;
                         if (Entities.TryGetValue(id, out var previouslyDefinedEntity))
                         {

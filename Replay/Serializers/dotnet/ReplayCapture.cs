@@ -382,12 +382,15 @@ namespace ReplayCapture
         EntityMesh,
         EntityBox,
 
+        EntityDefWithParent,
+
         ReplayHeader = 0xFF
     }
 
     public class Entity
     {
         public int Id;
+        public int ParentId = -1;
         public string Name;
         public string Path;
         public string TypeName;
