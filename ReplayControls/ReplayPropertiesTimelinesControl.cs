@@ -16,23 +16,23 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 {
     public WatchedVariable<string> FilterText { get; } = new();
     public WatchedBool EntitySelectionLocked { get; } = new(false);
-    private SelectionGroup<Entity> EntitySelection;
+    private readonly SelectionGroup<Entity> EntitySelection;
     private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private List<Entity> LockedSelection = new();
+    private readonly List<Entity> LockedSelection = new();
 
     public WatchedBool StackedByParameterDepth { get; } = new(true);
     public SelectionGroup<string> ParameterFilter { get; } = new();
 
-    private ITimelineWindow TimelineWindow;
+    private readonly ITimelineWindow TimelineWindow;
 
     public ColorProvider ColorProvider { get; private set; }
     private int ChannelHeight => 20;
     private double ChannelTextSize => 8;
-    private static System.Globalization.CultureInfo TextCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-us");
-    private static Typeface TextTypeface = new Typeface("Arial");
+    private static readonly System.Globalization.CultureInfo TextCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-us");
+    private static readonly Typeface TextTypeface = new("Arial");
 
-    private Pen CursorPen = new Pen(Brushes.Red, 1);
-    private Pen InterEntityPen = new Pen(Brushes.Black, 1);
+    private readonly Pen CursorPen = new(Brushes.Red, 1);
+    private readonly Pen InterEntityPen = new(Brushes.Black, 1);
 
     public ReplayCaptureReader replay;
     public ReplayCaptureReader Replay
@@ -45,7 +45,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         }
     }
 
-    VisualReplayDebugger.ReplayControls.TimelineMouseControlHandler MouseHandler;
+    readonly VisualReplayDebugger.ReplayControls.TimelineMouseControlHandler MouseHandler;
 
     public ReplayPropertiesTimelinesControl(ITimelineWindow timeLineWindow, ReplayCaptureReader replay, SelectionGroup<Entity> selectionset, ColorProvider colorProvider)
     {
@@ -192,7 +192,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         }
     }
 
-    IEnumerable<(int,double,double,double,double,string)> EnumerateRanges(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end)
+    record DynamicParamsEntryRange(int index, double t1, double t2, double rt1, double rt2, string val);
+    IEnumerable<DynamicParamsEntryRange> EnumerateRanges(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end)
     {
         string currentVal = string.Empty;
         double currentStartTime = 0;
@@ -206,28 +207,29 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             }
             else if (entry.time > end)
             {
-                yield return (index++, currentStartTime, end, currentRealStartTime, entry.time, currentVal);
+                yield return new(index++, currentStartTime, end, currentRealStartTime, entry.time, currentVal);
                 yield break;
             }
             else
             {
                 if (index == 0 && entry.time > start)
                 {
-                    yield return (index++, start, entry.time, currentRealStartTime, entry.time, currentVal);
+                    yield return new(index++, start, entry.time, currentRealStartTime, entry.time, currentVal);
                 }
                 else
                 {
-                    yield return (index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentVal);
+                    yield return new(index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentVal);
                 }
             }
             if (entry.val != currentVal) { currentRealStartTime = entry.time; }
             currentVal = entry.val;
             currentStartTime = entry.time;
         }
-        yield return (index++, currentStartTime, end, currentRealStartTime, end, currentVal);
+        yield return new(index++, currentStartTime, end, currentRealStartTime, end, currentVal);
     }
 
-    IEnumerable<(int, double, double, double, double, string, string)> EnumerateRangesAtDepth(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end, int depth)
+    record DynamicParamTimeEntryRange(int index, double t1, double t2, double rt1, double rt2, string val, string fullVal);
+    IEnumerable<DynamicParamTimeEntryRange> EnumerateRangesAtDepth(List<ReplayCaptureReader.DynamicParamTimeEntry> entries, double start, double end, int depth)
     {
         string currentValueAtDepth = string.Empty;
         string currentFullValueAtDepth = string.Empty;
@@ -245,18 +247,18 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             }
             else if (entry.time > end)
             {
-                yield return (index++, currentStartTime, end, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
+                yield return new(index++, currentStartTime, end, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                 yield break;
             }
             else if (entryValueAtDepth != currentValueAtDepth)
             {
                 if (index == 0 && entry.time > start)
                 {
-                    yield return (index++, start, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
+                    yield return new(index++, start, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                 }
                 else
                 {
-                    yield return (index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
+                    yield return new(index++, currentStartTime, entry.time, currentRealStartTime, entry.time, currentValueAtDepth, currentFullValueAtDepth);
                 }
             }
 
@@ -268,10 +270,10 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
                 currentRealStartTime = entry.time;
             }
         }
-        yield return (index++, currentStartTime, end, currentStartTime, end, currentValueAtDepth, currentFullValueAtDepth);
+        yield return new(index++, currentStartTime, end, currentStartTime, end, currentValueAtDepth, currentFullValueAtDepth);
     }
 
-    private Rect Bounds => new Rect(0, 0, ActualWidth, ActualHeight);
+    private Rect Bounds => new(0, 0, ActualWidth, ActualHeight);
 
     bool DrawLeafMode => !StackedByParameterDepth;
 
@@ -321,8 +323,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         public string Stripped(string txt) => txt.Split('|').FirstOrDefault()?.Trim() ?? string.Empty;
     }
 
-    private List<DrawChannel> DrawChannels = new();
-
+    private readonly List<DrawChannel> DrawChannels = new();
+    private readonly List<(int, double, double)> FramesTimeLineWindowRatios = new();
 
     private void PrepRender()
     {
@@ -534,8 +536,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 
     private void SetTooltipText(string text)
     {
-        var tt = this.ToolTip as TextBlock;
-        if (tt != null && text != null)
+        if (this.ToolTip is TextBlock tt && text != null)
         {
             tt.Text = text;
         }
