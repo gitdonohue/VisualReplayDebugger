@@ -15,6 +15,9 @@ namespace VisualReplayDebugger;
 
 public class ReplayViewportWithOverlay : Grid
 {
+    private static Vector3D UP = new(0, 0, 1);
+    private static readonly double UNIT_SCALE = 100.0;
+
     public WatchedBool FollowCameraEnabled { get; } = new(true);
     public WatchedBool FollowSelectionEnabled { get; } = new(false);
     public WatchedBool ShowAllNames { get; } = new(false);
@@ -45,10 +48,14 @@ public class ReplayViewportWithOverlay : Grid
     {
         var viewport3D = new HelixViewport3D();
         viewport3D.Background = Brushes.LightGray;
-        viewport3D.ModelUpDirection = new Vector3D(0, 0, 1);
+        viewport3D.ModelUpDirection = UP;
         viewport3D.Children.Add(new HelixToolkit.Wpf.SunLight() { Altitude = 70, Azimuth = 180 });
         viewport3D.Children.Add(new HelixToolkit.Wpf.SunLight() { Altitude = -45, Azimuth = 0 });
-        viewport3D.Children.Add(new HelixToolkit.Wpf.GridLinesVisual3D() { Normal = viewport3D.ModelUpDirection, Thickness = 2, MajorDistance = 1000, MinorDistance = 100, Width = 10000, Length = 10000 });
+        viewport3D.Children.Add(new HelixToolkit.Wpf.GridLinesVisual3D() { Normal = viewport3D.ModelUpDirection, Thickness = UNIT_SCALE/10, MajorDistance = UNIT_SCALE * 100, MinorDistance = UNIT_SCALE * 10, Width = UNIT_SCALE * 1000, Length = UNIT_SCALE * 1000 });
+
+        viewport3D.Camera.NearPlaneDistance = UNIT_SCALE / 10;
+        viewport3D.Camera.FarPlaneDistance = UNIT_SCALE * 100000;
+        viewport3D.LookAt(new Point3D(), UNIT_SCALE * 100, 200);
 
         ReplayViewportContent = new ReplayViewportContent(viewport3D.Viewport, null, timelineWindow, selectionset, visibleEntities, DrawCategoryFilter, DrawColorFilter);
         ReplayViewportContent.FollowCameraEnabled.BindWith(FollowCameraEnabled);
