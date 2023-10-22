@@ -13,7 +13,7 @@ public class Viewport3DOverlayHelper : Canvas
 {
     public Viewport3D Viewport { get; private set; }
 
-    private Typeface Typeface;
+    private readonly Typeface Typeface;
 
     public Viewport3DOverlayHelper(Viewport3D viewport)
     {
@@ -28,7 +28,7 @@ public class Viewport3DOverlayHelper : Canvas
 
     public void SetDirty() => InvalidateVisual();
 
-    private List<(FormattedText txt, Point3D worldpos, Brush backgroundBrush)> Labels = new();
+    private readonly List<(FormattedText txt, Point3D worldpos, Brush backgroundBrush)> Labels = new();
     public void CreateLabel(string label, Point3D worldpos, int size, Color color) 
     {
         var txt = GetFormattedText(label, size, color);
@@ -38,7 +38,7 @@ public class Viewport3DOverlayHelper : Canvas
     public void ClearLabels() { Labels.Clear(); }
 
 
-    private List<(Point3D worldpos, int radius, Pen pen, Brush brush)> Circles = new();
+    private readonly List<(Point3D worldpos, int radius, Pen pen, Brush brush)> Circles = new();
     public void CreateCircle(Point3D worldpos, int size, Color color)
     {
         Circles.Add((worldpos, size, new Pen(new SolidColorBrush(color), 1), null));
@@ -49,7 +49,7 @@ public class Viewport3DOverlayHelper : Canvas
     public Point WorldToScreen(Point3D p) => HelixToolkit.Wpf.Viewport3DHelper.Point3DtoPoint2D(Viewport, p); // TODO: Remove dependency on Helix3D
 
     // TODO: Caching/Reuse
-    private FormattedText GetFormattedText(string text, int size, Color color) => new FormattedText(text,
+    private FormattedText GetFormattedText(string text, int size, Color color) => new(text,
             System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface, size, new SolidColorBrush(color), 1.0);
 
     protected override void OnRender(DrawingContext dc)
