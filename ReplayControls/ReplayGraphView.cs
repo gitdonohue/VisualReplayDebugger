@@ -158,10 +158,10 @@ public class ReplayGraphView : UserControl, IDisposable
     enum RenderModeType 
     { 
         Direct,
-        Bitmap,
-        BitmapWithLoRezFastDraw
+        Bitmap, // TODO: BROKEN
+        BitmapWithLoRezFastDraw // TODO: BROKEN
     }
-    RenderModeType RenderMode { get; set; } = RenderModeType.BitmapWithLoRezFastDraw;
+    RenderModeType RenderMode { get; set; } = RenderModeType.Direct;
 
     public void StepRenderingMode()
     {
