@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Timeline;
 
 namespace ReplayCapture;
 
@@ -179,6 +180,30 @@ public class ReplayCaptureReader
         nextFrameTime = GetTimeForFrame(currentFrame + 1);
         previousFrameTime = GetTimeForFrame(currentFrame - 1);
         return currentFrameTime;
+    }
+
+    public IEnumerable<(int, double, double)> GetWindowFrameRatios(ITimelineWindow window)
+    {
+        double lastRatio = 0;
+        double windowStart = window.Start;
+        double windowEnd = window.End;
+        double windowLength = window.End - window.Start;
+        int frameNum = 0;
+        foreach (float t in FrameTimes)
+        {
+            if (t > windowEnd)
+            {
+                yield return (frameNum, lastRatio, 1);
+                break;
+            }
+            else if (t > windowStart)
+            {
+                double ratio = (t - windowStart) / windowLength;
+                yield return (frameNum, lastRatio, ratio);
+                lastRatio = ratio;
+            }
+            ++frameNum;
+        }
     }
 
     public double TotalTime => FrameTimes[FrameTimes.Length - 1];

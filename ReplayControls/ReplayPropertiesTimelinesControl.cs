@@ -152,7 +152,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             LockedSelection.Clear();
             LockedSelection.AddRange(EntitySelection.SelectionSet);
 
-            Height = CalcHeight();
+            //Height = CalcHeight();
             SetDirty();
         }
     }
@@ -403,6 +403,9 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             DrawChannels.Add(channel);
         }
 
+        FramesTimeLineWindowRatios.Clear();
+        FramesTimeLineWindowRatios.AddRange(Replay.GetWindowFrameRatios(TimelineWindow));
+
         _blockUnderMouse = FindBlockAtPos(MouseHandler.MouseLastPos);
     }
 
@@ -411,6 +414,19 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         if (Replay == null) return;
         
         PrepRender();
+
+        // Alternating background colors for frame delemitation
+        var bgLight = new SolidColorBrush(Colors.White);
+        var bgDark = new SolidColorBrush(Colors.LightGray);
+        dc.DrawRectangle(bgLight, null, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        foreach ((int frameNum, double ratioLeft, double ratioRight) in FramesTimeLineWindowRatios)
+        {
+            double w = Bounds.Width * (ratioRight - ratioLeft);
+            if ((frameNum % 2) == 0 && (w > 2))
+            {
+                dc.DrawRectangle(bgDark, null, new Rect(Bounds.Width * ratioLeft, 0, w, Bounds.Height));
+            }
+        }
 
         var outOfBoundsGradient = new LinearGradientBrush(Colors.GhostWhite, Colors.LightGray, 90);
 
