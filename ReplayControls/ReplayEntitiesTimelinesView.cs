@@ -23,7 +23,7 @@ namespace VisualReplayDebugger
         public WatchedVariable<string> FilterText { get; } = new();
         public ITimelineWindow TimelineWindow { get; private set; }
         public SelectionGroup<string> TimelineEntityCategoryFilter { get; private set; } = new();
-        public WatchedBool ShowAllEntities { get; } = new(false);
+        public WatchedBool ShowAllEntities { get; } = new(true);
 
         public int LabelWidth => 250;
 
@@ -45,7 +45,7 @@ namespace VisualReplayDebugger
         // Mouse handler derived to handle offset
         public class TimelineMouseControlHandlerEx : ReplayControls.TimelineMouseControlHandler
         {
-            private ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
+            private readonly ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
             public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView, bool slideWindowWhileScurbbing) : base(timelineWindow,null, slideWindowWhileScurbbing: slideWindowWhileScurbbing) 
             {
                 ReplayEntitiesTimelinesView = replayEntitiesTimelinesView;
@@ -53,7 +53,7 @@ namespace VisualReplayDebugger
             public override double ControlWidth => ReplayEntitiesTimelinesView.TimelineBarWidth;
             public override System.Windows.Point MousePos(MouseEventArgs e) => e.GetPosition(ReplayEntitiesTimelinesView).WithXOffset(-ReplayEntitiesTimelinesView.TimelineBarOffset - 8);
         }
-        TimelineMouseControlHandlerEx MouseHandler;
+        readonly TimelineMouseControlHandlerEx MouseHandler;
 
         public ReplayEntitiesTimelinesView(ITimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> visibleset, ReplayCaptureReader replay)
         {
@@ -97,15 +97,17 @@ namespace VisualReplayDebugger
         {
             foreach(var it in this.Items.Cast<EntityTimelineViewWithLabel>()) { it.Dispose(); }
             this.Items.Clear();
+
             if (replay != null)
             {
                 var filter = new SearchContext(FilterText.Value);
-                foreach (var entity in replay.Entities)
+                foreach (var entityNode in replay.EntitiesGraph.EnumerateDepthFirst().Where(x=>x.Entity != null))
                 {
+                    var entity = entityNode.Entity;
                     if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
                     if (!filter.Empty && !(filter.Match(entity.Name) || filter.Match(entity.Path)) ) continue;
-                    this.Items.Add(new EntityTimelineViewWithLabel(entity, replay, TimelineWindow, LabelWidth, this));
+                    this.Items.Add(new EntityTimelineViewWithLabel(entity, entityNode.PathName, replay, TimelineWindow, LabelWidth, this));
                 }
             }
         }
