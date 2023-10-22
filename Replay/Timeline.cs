@@ -82,10 +82,30 @@ public class TimelineWindow : ITimelineWindow
     }
     ITimeline timeline;
 
-    public double Start { get => start; set { double pre = start; start = value; Clamp(); if (start != pre) CallChanged(); } }
+    public double Start 
+    { 
+        get => start; 
+        set 
+        { 
+            double pre = start; 
+            start = value; 
+            Clamp(); 
+            if (start != pre) CallChanged(); 
+        } 
+    }
     double start;
 
-    public double End { get => end; set { double pre = end; end = value; Clamp(); if (end != pre) CallChanged(); } }
+    public double End 
+    { 
+        get => end; 
+        set 
+        { 
+            double pre = end; 
+            end = value; 
+            Clamp(); 
+            if (end != pre) CallChanged(); 
+        } 
+    }
     double end = 1;
 
     double Min => Timeline?.Start ?? double.NegativeInfinity;

@@ -148,7 +148,7 @@ public class ReplayCaptureReader
 
     public int GetFrameForTime(double t)
     {
-        if (t <= 0) return 0;
+        if (t <= 0 || Double.IsNaN(t)) return 0;
         int t_indx = (int)Math.Abs(t);
         if (t_indx >= FramesForTimes.Length) { t_indx = FramesForTimes.Length - 1; }
         int index = FramesForTimes[t_indx];
@@ -301,6 +301,7 @@ public class ReplayCaptureReader
         {
             yield return ("Name", entity.Name);
             yield return ("Path", entity.Path);
+            yield return ("Id", $"{entity.Id}({entity.ParentId})");
             bool isActive = GetEntityLifeTime(entity).InRange(frame);
             //yield return ("Active", $"{isActive}");
             if (!isActive) { yield break; }
@@ -326,6 +327,8 @@ public class ReplayCaptureReader
     public int[] FramesForTimes { get; private set; } = new int[1]; // Skip list
     //public List<EntityEx> Entities { get; private set; } = new();
     public Dictionary<int,EntityEx> Entities { get; private set; } = new();
+    public EntityGraphNode EntitiesGraph { get; private set; } = new();
+
     public Dictionary<Entity, FrameRange> EntityLifeTimes { get; private set; } = new();
     private FrameStampedListDict<Entity,Transform> EntitySetTransforms { get; set; } = new();
     public FrameStampedList<(Entity entity, string category, string message, Color color)> LogEntries { get; private set; } = new();
@@ -355,6 +358,8 @@ public class ReplayCaptureReader
         public double Radius => scale;
 
         public bool IsCreationDraw => entity != null && ((entity as EntityEx).RegistrationFrame == frame || (entity as EntityEx).CreationFrame == frame) && string.IsNullOrEmpty(category);
+
+        //public System.Windows.Media.Colors WindowsColor => Enum.Parse(typeof(System.Windows.Media.Colors), color.ToString());
     }
     public FrameStampedList<EntityDrawCommand> DrawCommands { get; private set; } = new();
 
@@ -617,6 +622,15 @@ public class ReplayCaptureReader
         EntitySetTransforms.Bake();
         EntityDynamicParamsCombined.Bake();
         EntityDynamicValues.Bake();
+
+        EntitiesGraph = EntityGraphNode.BuildGraph(Entities.Values);
+
+        foreach (var entity in Entities.Values)
+        {
+            entity.CreationDrawsCommands = DrawCommands.AtFrame(entity.CreationFrame).Where(x => x.entity == entity && x.IsCreationDraw)
+                        .Concat(DrawCommands.AtFrame(entity.RegistrationFrame).Where(x => x.entity == entity && x.IsCreationDraw))
+                        .ToList();
+        }
     }
 
     private void AddDrawCommand(int frame, EntityDrawCommand dc)
@@ -638,6 +652,105 @@ public class EntityEx : Entity
     public bool HasMesh;
     public bool HasParameters;
     public bool HasNumericParameters;
+
+    public List<ReplayCaptureReader.EntityDrawCommand> CreationDrawsCommands = new();
+}
+
+public class EntityGraphNode
+{
+    public EntityEx? Entity;
+    public List<EntityGraphNode> Children = new();
+    public EntityGraphNode? Parent;
+
+    public string Name => Entity?.Name ?? "root";
+    public string PathName => (Parent?.Entity != null) ? $"{Parent.PathName}.{Name}" : Name;
+
+    public EntityGraphNode? FindNode(int id)
+    {
+        if (Entity != null && Entity.Id == id) return this;
+        foreach (var childnode in Children.Select(x => x.FindNode(id)))
+        {
+            if (childnode != null) return childnode;
+        }
+        return null;
+    }
+
+    public IEnumerable<EntityGraphNode> FindNodeWithParent(int parent_id)
+    {
+        return EnumerateDepthFirst().ToList().Where(x => x.Entity != null && x.Entity.HasParent && x.Entity.ParentId == parent_id);
+    }
+
+    public void AddEntity(EntityEx e)
+    {
+        EntityGraphNode node = new() { Entity = e };
+
+        if ((!e.HasParent)
+            || (Entity != null && Entity.Id == e.ParentId))
+        {
+            node.Parent = this;
+            Children.Add(node);
+        }
+        else
+        {
+            var parentNode = this.FindNode(e.ParentId);
+            if (parentNode != null)
+            {
+                parentNode.AddEntity(e);
+            }
+            else
+            {
+                // Parent not yet in the graph, add it here for the time being
+                node.Parent = this;
+                Children.Add(node);
+            }      
+        }
+
+        // Nodes can be added before their parents, so we need to reparent
+        foreach (var childNode in this.FindNodeWithParent(e.Id))
+        {
+            childNode.Parent.Children.Remove(childNode);
+            childNode.Parent = node;
+            childNode.Parent.Children.Add(childNode);
+        }
+
+    }
+
+    public static EntityGraphNode BuildGraph(IEnumerable<EntityEx> entities)
+    {
+        EntityGraphNode root = new();
+        foreach (var e in entities)
+        {
+            root.AddEntity(e);
+        }
+        return root;
+    }
+
+    public IEnumerable<EntityGraphNode> EnumerateDepthFirst()
+    {
+        yield return this;
+        foreach (EntityGraphNode childnode in Children)
+        {
+            foreach (var child in childnode.EnumerateDepthFirst())
+            {
+                yield return child; 
+            }
+        }
+    }
+
+    public IEnumerable<EntityEx> EnumerateEntitiesDepthFirst()
+    {
+        if (Entity != null)
+        {
+            yield return Entity;
+        }
+        foreach (var childnode in Children)
+        {
+            foreach (var childEntity in childnode.EnumerateEntitiesDepthFirst())
+            {
+                yield return childEntity;
+            }
+        }
+    }
 }
 
 internal static class BinaryIOExtensionsRead

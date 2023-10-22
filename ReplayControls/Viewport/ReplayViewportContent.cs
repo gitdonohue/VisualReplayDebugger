@@ -51,6 +51,9 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public event Action<Point3D, int, System.Windows.Media.Color> DrawCircleRequest;
     public event Action DrawCircleResetRequest;
 
+    public event Action<Point3D, Point3D, System.Windows.Media.Color> DrawLineRequest;
+    public event Action DrawLineResetRequest;
+
     public event Action CameraManuallyMoved;
 
     public event Action<Point3D> FocusAtRequested;
@@ -208,7 +211,6 @@ public class ReplayViewportContent // TODO: Make IDisposable
     }
 
     readonly Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColors = new();
-
     
     readonly List<MeshElement3D> drawnSpheres = new();
     private void DrawSpheresClear()
@@ -311,10 +313,9 @@ public class ReplayViewportContent // TODO: Make IDisposable
         {
             foreach (var entity in Replay.Entities.Values)
             {
-                var creationDrawCommands = Replay.DrawCommands.AtFrame(entity.CreationFrame).Where(x=>x.entity == entity && x.IsCreationDraw)
-                    .Concat(Replay.DrawCommands.AtFrame(entity.RegistrationFrame).Where(x => x.entity == entity && x.IsCreationDraw));
-                foreach (var creationDrawCommand in creationDrawCommands)
+                foreach (var creationDrawCommand in entity.CreationDrawsCommands)
                 {
+#if false
                     var drawXform = creationDrawCommand.xform.ToTransform3D();
                     var entityXform = entity.InitialTransform.ToTransform3D();
 
@@ -322,25 +323,21 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     var entity_space_offset =  creationDrawCommand.xform.Translation.ToPoint() - entity.InitialTransform.Translation.ToPoint();
                     Transform3D modelTransform = new TranslateTransform3D(entity_space_offset);
                     // TODO: Handle rotation
-
+#else
+                    Transform3D modelTransform = Transform3D.Identity;
+#endif
                     ModelVisual3D geom = null;
                     if (creationDrawCommand.type == EntityDrawCommandType.Line)
                     {
-                        //// Lines are not aligning well in 3d after transform.
-                        //var lines = new ScreenSpaceLines3D() { GetVisualToViewportTransform = () => Viewport3D.GetTotalTransform() };
-                        //lines.Points.Add((creationDrawCommand.Pos.ToPoint() - entity.InitialTransform.Translation.ToPoint()).ToPoint3D());
-                        //lines.Points.Add((creationDrawCommand.p2.ToPoint() - entity.InitialTransform.Translation.ToPoint()).ToPoint3D());
-                        //lines.Thickness = 2.0;
-                        //lines.Color = ColorConversion[creationDrawCommand.color];
-                        //geom = lines;
+                        // Lines will be drawn in overlay
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Sphere)
                     {
-                        geom = new SphereVisual3D() { Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
+                        geom = new SphereVisual3D() { Center = creationDrawCommand.Pos.ToPoint(), Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Box)
                     {
-                        geom = new BoxVisual3D() { Width = creationDrawCommand.Dimensions.X, Length = creationDrawCommand.Dimensions.Y, Height = creationDrawCommand.Dimensions.Z };
+                        geom = new BoxVisual3D() { Center = creationDrawCommand.Pos.ToPoint(), Width = creationDrawCommand.Dimensions.X, Length = creationDrawCommand.Dimensions.Y, Height = creationDrawCommand.Dimensions.Z };
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Capsule)
                     {
@@ -532,15 +529,16 @@ public class ReplayViewportContent // TODO: Make IDisposable
         int frame = Replay.GetFrameForTime(time);
         DrawLabelResetRequest?.Invoke();
         DrawCircleResetRequest?.Invoke();
+        DrawLineResetRequest?.Invoke();
         foreach (var entity in Replay.EntitiesWithTransforms)
         {
             bool isAlive = Replay.GetEntityLifeTime(entity).InRange(frame);
             bool isSelected = EntitySelection.SelectionSet.Contains(entity);
 
             var xform = Replay.GetEntityTransform(entity, time);
+            var entityTransform = xform.ToTransform3D();
             if (EntityModels.TryGetValue(entity, out var geomlist))
             {
-                var entityTransform = xform.ToTransform3D();
                 foreach ((Transform3D localXform, ModelVisual3D geom) in geomlist)
                 {
                     var finalTransform = new MatrixTransform3D(localXform.Value * entityTransform.Value);
@@ -577,7 +575,15 @@ public class ReplayViewportContent // TODO: Make IDisposable
 
             if (isAlive)
             {
+                // Circle to show entity position
                 DrawCircleRequest?.Invoke(xform.Translation.ToPoint(), 8, isSelected ? Colors.Red : Colors.Blue);
+
+                // Screen Space lines
+                EntityEx ex = entity as EntityEx;
+                foreach (var drawCommand in ex.CreationDrawsCommands.Where(x=>x.type == EntityDrawCommandType.Line))
+                {
+                    DrawLineRequest?.Invoke(entityTransform.Transform(drawCommand.Pos.ToPoint()), entityTransform.Transform(drawCommand.EndPoint.ToPoint()), ColorConversion[drawCommand.color]);
+                }
             }
         }
 

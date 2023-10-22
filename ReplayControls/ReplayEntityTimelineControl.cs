@@ -129,7 +129,7 @@ class EntityTimelineViewWithLabel : DockPanel, IDisposable
     public double TimelineWidth => EntityTimelineView?.ActualWidth ?? ActualWidth;
     public double TimelineOffset => ActualWidth - TimelineWidth;
 
-    public EntityTimelineViewWithLabel(Entity entity, ReplayCaptureReader replay, ITimelineWindow timelineWindow, int labelWidth, ReplayEntitiesTimelinesView view)
+    public EntityTimelineViewWithLabel(Entity entity, string name, ReplayCaptureReader replay, ITimelineWindow timelineWindow, int labelWidth, ReplayEntitiesTimelinesView view)
     {
         Entity = entity;
 
@@ -142,7 +142,7 @@ class EntityTimelineViewWithLabel : DockPanel, IDisposable
         label.Padding = new Thickness() { Left = 4 };
         label.Height = 16;
         label.Width = labelWidth;
-        label.Text = entity.Name;
+        label.Text = name;
         DockPanel.SetDock(label, Dock.Left);
         this.Children.Add(label);
 

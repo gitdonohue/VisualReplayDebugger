@@ -45,7 +45,16 @@ public class Viewport3DOverlayHelper : Canvas
     }
     public void ClearCircles() { Circles.Clear(); }
 
-    
+    private readonly List<(Point3D worldpos1, Point3D worldpos2, Pen pen)> Lines = new();
+    public void CreateLine(Point3D worldpos1, Point3D worldpos2, Color color)
+    {
+        Lines.Add((worldpos1, worldpos2, new Pen(new SolidColorBrush(color), 1)));
+    }
+    public void ClearLines()
+    {
+        Lines.Clear();
+    }
+
     public Point WorldToScreen(Point3D p) => HelixToolkit.Wpf.Viewport3DHelper.Point3DtoPoint2D(Viewport, p); // TODO: Remove dependency on Helix3D
 
     // TODO: Caching/Reuse
@@ -65,6 +74,12 @@ public class Viewport3DOverlayHelper : Canvas
         {
             Point pos = WorldToScreen(worldpos);
             dc.DrawEllipse(brush, pen, pos, (double)size/2, (double)size /2);
+        }
+        foreach ((Point3D worldpos1, Point3D worldpos2, Pen pen) in Lines)
+        {
+            Point p1 = WorldToScreen(worldpos1);
+            Point p2 = WorldToScreen(worldpos2);
+            dc.DrawLine(pen, p1, p2);
         }
         dc.Pop();
     }

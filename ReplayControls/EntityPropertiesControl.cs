@@ -15,11 +15,11 @@ class EntityPropertiesControl : TextBox
 {
     public WatchedVariable<string> FilterText { get; } = new();
     public WatchedBool EntitySelectionLocked { get; } = new(false);
-    private SelectionGroup<Entity> EntitySelection;
+    private readonly SelectionGroup<Entity> EntitySelection;
     private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private List<Entity> LockedSelection = new();
+    private readonly List<Entity> LockedSelection = new();
 
-    private ITimelineWindow TimelineWindow;
+    private readonly ITimelineWindow TimelineWindow;
 
     public ReplayCaptureReader replay;
     public ReplayCaptureReader Replay

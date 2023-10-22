@@ -76,6 +76,8 @@ public class ReplayViewportWithOverlay : Grid
         ReplayViewportContent.DrawLabelResetRequest += overlay2D.ClearLabels;
         ReplayViewportContent.DrawCircleRequest += (Point3D pos, int sz, System.Windows.Media.Color color) => overlay2D.CreateCircle(pos,sz,color);
         ReplayViewportContent.DrawCircleResetRequest += overlay2D.ClearCircles;
+        ReplayViewportContent.DrawLineRequest += (Point3D pos1, Point3D pos2, System.Windows.Media.Color color) => overlay2D.CreateLine(pos1, pos2, color);
+        ReplayViewportContent.DrawLineResetRequest += overlay2D.ClearLines;
 
         FollowSelectionEnabled.Changed += () => { if (FollowCameraEnabled) FollowCameraEnabled.Set(false); };
         FollowCameraEnabled.Changed += () => { if (FollowSelectionEnabled) FollowSelectionEnabled.Set(false); };

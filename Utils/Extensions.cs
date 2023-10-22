@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using ReplayCapture;
 using WatchedVariable;
 
 namespace VisualReplayDebugger;
@@ -68,16 +69,16 @@ public static class Extensions
         }
     }
 
-    public static System.Windows.Point WithX(this System.Windows.Point p, double x) => new System.Windows.Point(x, p.Y);
-    public static System.Windows.Point WithXOffset(this System.Windows.Point p, double x) => new System.Windows.Point(p.X + x, p.Y);
-    public static System.Windows.Point WithY(this System.Windows.Point p, double y) => new System.Windows.Point(p.X, y);
-    public static System.Windows.Point WithYOffset(this System.Windows.Point p, double y) => new System.Windows.Point(p.X, p.Y + y);
+    public static System.Windows.Point WithX(this System.Windows.Point p, double x) => new(x, p.Y);
+    public static System.Windows.Point WithXOffset(this System.Windows.Point p, double x) => new(p.X + x, p.Y);
+    public static System.Windows.Point WithY(this System.Windows.Point p, double y) => new(p.X, y);
+    public static System.Windows.Point WithYOffset(this System.Windows.Point p, double y) => new(p.X, p.Y + y);
     public static System.Windows.Media.Color WithAlpha(this System.Windows.Media.Color c, byte alpha) => System.Windows.Media.Color.FromArgb(alpha, c.R, c.G, c.B);
     public static System.Windows.Media.Color WithAlpha(this System.Windows.Media.Color c, double alpha) => c.WithAlpha((byte)(alpha * 0xFF));
-    public static SolidColorBrush WithAlpha(this SolidColorBrush b, byte alpha) => new SolidColorBrush(b.Color.WithAlpha(alpha));
+    public static SolidColorBrush WithAlpha(this SolidColorBrush b, byte alpha) => new(b.Color.WithAlpha(alpha));
     public static SolidColorBrush WithAlpha(this SolidColorBrush b, double alpha) => b.WithAlpha((byte)(alpha * 0xFF));
 
-    public static Pen WithAlpha(this Pen pen, byte alpha) => new Pen((pen.Brush as SolidColorBrush).WithAlpha(alpha), pen.Thickness);
+    public static Pen WithAlpha(this Pen pen, byte alpha) => new((pen.Brush as SolidColorBrush).WithAlpha(alpha), pen.Thickness);
     public static Pen WithAlpha(this Pen pen, double alpha) => pen.WithAlpha((byte)(alpha * 0xFF));
 
 
@@ -124,5 +125,4 @@ public static class Extensions
         }
         return _brushConversionTable[color];
     }
-
 }

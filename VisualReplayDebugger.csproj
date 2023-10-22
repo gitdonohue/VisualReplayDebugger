@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ApplicationIcon>$(MSBuildProjectDirectory)\Bokehlicia-Pacifica-Utilities-system-monitor.ico</ApplicationIcon>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="publish\**" />
