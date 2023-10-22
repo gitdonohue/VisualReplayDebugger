@@ -57,7 +57,7 @@ public class ReplayViewportWithOverlay : Grid
         ReplayViewportContent.ShowAllPaths.BindWith(ShowAllPaths);
         ReplayViewportContent.ShowDrawPrimitives.BindWith(ShowDrawPrimitives);
         ReplayViewportContent.ShowAllDrawPrimitivesInRange.BindWith(ShowAllDrawPrimitivesInRange);
-        ReplayViewportContent.FocusAtRequested += (p) => { viewport3D.LookAt(p, 2000); };
+        ReplayViewportContent.FocusAtRequested += (p) => { viewport3D.LookAt(p, 200); };
         viewport3D.Children.Add(ReplayViewportContent.ModelVisual3D);
         ReplayViewportContent.CameraManuallyMoved += () => CameraManuallyMoved.Invoke();
 
