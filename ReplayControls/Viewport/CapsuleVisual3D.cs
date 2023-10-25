@@ -45,6 +45,8 @@ namespace HelixToolkit.Wpf
             }
         }
 
+        public Point3D Start { get => Center; set => Center = value; }
+
         public bool SimilarTo(Point3D p1, Point3D p2, double radius) => SimilarTo(p2-p1, radius);
         public bool SimilarTo(Vector3D h, double radius) => (h - (End - Center)).Length < float.Epsilon;
 

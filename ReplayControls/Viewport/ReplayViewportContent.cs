@@ -277,7 +277,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         }
         else
         {
-            capsule = new CapsuleVisual3D() { End = (p2 - p1).ToPoint3D(), Radius = radius, PhiDiv = 10, ThetaDiv = 20 };
+            capsule = new CapsuleVisual3D() { Start = p1, End = p2, Radius = radius, PhiDiv = 10, ThetaDiv = 20 };
             Model3DGroup.Children.Add(capsule.Content);
             capsulesCache.Add(capsule);
         }
@@ -341,7 +341,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Capsule)
                     {
-                        geom = new CapsuleVisual3D() { End = (creationDrawCommand.EndPoint.ToPoint() - creationDrawCommand.Pos.ToPoint()).ToPoint3D(), Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
+                        geom = new CapsuleVisual3D() { Start = creationDrawCommand.Pos.ToPoint(), End = creationDrawCommand.EndPoint.ToPoint(), Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Mesh)
                     {
