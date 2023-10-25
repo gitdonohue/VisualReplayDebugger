@@ -54,6 +54,7 @@ public class ColorProvider
     Dictionary<string, Color> LabelColors = new();
     public Color GetLabelColor(string label)
     {
+        label = label.Split('.').Last();
         if (!LabelColors.TryGetValue(label, out Color basecolor))
         {
             basecolor = RandomColors[LabelColors.Count() % RandomColors.Count];
