@@ -55,12 +55,14 @@
                         </LayoutAnchorablePaneGroup>
                     </LayoutAnchorablePaneGroup>
                     <LayoutAnchorablePaneGroup Orientation="Horizontal" DockHeight="0.9*">
-                        <LayoutAnchorablePane DockWidth="1.2*">
+                        <LayoutAnchorablePane DockWidth="0.6*">
                             <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Logs" x:Name="LogsWindow" IsSelected="True" />
                         </LayoutAnchorablePane>
-                        <LayoutAnchorablePane DockWidth="0.8*">
+						<LayoutAnchorablePane DockWidth="0.2*">
+							<LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Properties" x:Name="PropertiesWindow"/>
+						</LayoutAnchorablePane>
+						<LayoutAnchorablePane DockWidth="0.3*">
                             <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Viewport" x:Name="ViewportWindow" IsSelected="True"/>
-                            <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Properties" x:Name="PropertiesWindow"/>
                             <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Video" x:Name="VideoWindow"/>
                             <LayoutAnchorable AutoHideMinWidth="100" AutoHideMinHeight="100" Title="Draws" x:Name="DrawsLogsWindow"/>
                         </LayoutAnchorablePane>
