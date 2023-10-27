@@ -48,8 +48,11 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public event Action<string, Point3D, int> DrawLabelRequest;
     public event Action DrawLabelResetRequest;
 
-    public event Action<Point3D, int, System.Windows.Media.Color> DrawCircleRequest;
-    public event Action DrawCircleResetRequest;
+    public event Action<Point3D, double, System.Windows.Media.Color> DrawScreenSpaceCircleRequest;
+    public event Action DrawScreenSpaceCircleResetRequest;
+
+    public event Action<Point3D, Point3D, double, System.Windows.Media.Color> DrawWorldSpaceCircleRequest;
+    public event Action DrawWorldSpaceCircleResetRequest;
 
     public event Action<Point3D, Point3D, System.Windows.Media.Color> DrawLineRequest;
     public event Action DrawLineResetRequest;
@@ -207,7 +210,27 @@ public class ReplayViewportContent // TODO: Make IDisposable
 
     private void DrawCircle(Point center, Point up, double radius, ReplayCapture.Color color)
     {
-        // TODO
+        var drawpoints = LinesByColor[color].Points;
+
+        // Find a basis vector on the plane
+        var c = center.ToVector();
+        var normal = System.Numerics.Vector3.Normalize( up.ToVector() );
+        var plane = new System.Numerics.Plane(normal, System.Numerics.Vector3.Dot(normal, c));
+        var randomPoint = new System.Numerics.Vector3(666,666,666); // TODO: find a new point if the projection would match c
+        var d = System.Numerics.Plane.DotNormal(plane, randomPoint);
+        var pointOnPlane = randomPoint - d * normal;
+        var randomBasisVector = System.Numerics.Vector3.Normalize(pointOnPlane - c) * (float)radius;
+
+        // Rotate the vector about the center
+        const int nDivs = 32;
+        const float stepAngle = (float)(2.0 * Math.PI / nDivs);
+        var stepRotation = System.Numerics.Quaternion.CreateFromAxisAngle(normal, stepAngle);
+        for (int i = 0; i < nDivs; ++i)
+        {
+            drawpoints.Add((c + randomBasisVector).ToPoint());
+            randomBasisVector = System.Numerics.Vector3.Transform(randomBasisVector, stepRotation);
+            drawpoints.Add((c + randomBasisVector).ToPoint());
+        }
     }
 
     readonly Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColors = new();
@@ -528,7 +551,8 @@ public class ReplayViewportContent // TODO: Make IDisposable
 
         int frame = Replay.GetFrameForTime(time);
         DrawLabelResetRequest?.Invoke();
-        DrawCircleResetRequest?.Invoke();
+        DrawScreenSpaceCircleResetRequest?.Invoke();
+        DrawWorldSpaceCircleResetRequest?.Invoke();
         DrawLineResetRequest?.Invoke();
         foreach (var entity in Replay.EntitiesWithTransforms)
         {
@@ -576,13 +600,21 @@ public class ReplayViewportContent // TODO: Make IDisposable
             if (isAlive)
             {
                 // Circle to show entity position
-                DrawCircleRequest?.Invoke(xform.Translation.ToPoint(), 8, isSelected ? Colors.Red : Colors.Blue);
+                DrawScreenSpaceCircleRequest?.Invoke(xform.Translation.ToPoint(), 8.0, isSelected ? Colors.Red : Colors.Blue);
 
-                // Screen Space lines
+                // Lines (2d overlay)
                 EntityEx ex = entity as EntityEx;
                 foreach (var drawCommand in ex.CreationDrawsCommands.Where(x=>x.type == EntityDrawCommandType.Line))
                 {
                     DrawLineRequest?.Invoke(entityTransform.Transform(drawCommand.Pos.ToPoint()), entityTransform.Transform(drawCommand.EndPoint.ToPoint()), ColorConversion[drawCommand.color]);
+                }
+
+                // circles (2d overlay)
+                foreach (var drawCommand in ex.CreationDrawsCommands.Where(x => x.type == EntityDrawCommandType.Circle))
+                {
+                    Point3D c = entityTransform.Transform(drawCommand.Pos.ToPoint());
+                    Point3D end = entityTransform.Transform(drawCommand.Pos.ToPoint() + (Vector3D)drawCommand.EndPoint.ToPoint());
+                    DrawWorldSpaceCircleRequest?.Invoke(c, end - (Vector3D)c, drawCommand.Radius, ColorConversion[drawCommand.color]);
                 }
             }
         }
@@ -634,6 +666,8 @@ public class ReplayViewportContent // TODO: Make IDisposable
 public static class ReplayViewportExtensions
 {
     public static Point3D ToPoint(this ReplayCapture.Point p) => new(p.X, p.Y, p.Z);
+    public static System.Numerics.Vector3 ToVector(this ReplayCapture.Point p) => new(p.X, p.Y, p.Z);
+    public static Point3D ToPoint(this System.Numerics.Vector3 p) => new(p.X, p.Y, p.Z);
     public static Transform3D ToTransform3D(this ReplayCapture.Transform xform) =>
         Transform3DHelper.CombineTransform(
             new RotateTransform3D(new QuaternionRotation3D(new System.Windows.Media.Media3D.Quaternion(xform.Rotation.X, xform.Rotation.Y, xform.Rotation.Z, xform.Rotation.W))),

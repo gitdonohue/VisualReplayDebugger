@@ -354,6 +354,7 @@ public class ReplayCaptureReader
 
         public Point Pos => xform.Translation;
         public Point EndPoint => p2;
+        public Point UpVect => p2;
         public Point Dimensions => p2;
         public double Radius => scale;
 

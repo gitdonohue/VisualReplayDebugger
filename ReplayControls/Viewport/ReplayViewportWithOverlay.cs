@@ -74,8 +74,10 @@ public class ReplayViewportWithOverlay : Grid
         ShowAllNames.Changed += overlay2D.SetDirty;
         ReplayViewportContent.DrawLabelRequest += (string txt, Point3D pos, int sz) => overlay2D.CreateLabel(txt, pos, sz, Colors.Black);
         ReplayViewportContent.DrawLabelResetRequest += overlay2D.ClearLabels;
-        ReplayViewportContent.DrawCircleRequest += (Point3D pos, int sz, System.Windows.Media.Color color) => overlay2D.CreateCircle(pos,sz,color);
-        ReplayViewportContent.DrawCircleResetRequest += overlay2D.ClearCircles;
+        ReplayViewportContent.DrawScreenSpaceCircleRequest += (Point3D pos, double sz, System.Windows.Media.Color color) => overlay2D.CreateScreenSpaceCircle(pos,sz,color);
+        ReplayViewportContent.DrawScreenSpaceCircleResetRequest += overlay2D.ClearScreenSpaceCircles;
+        ReplayViewportContent.DrawWorldSpaceCircleRequest += (Point3D pos, Point3D up, double sz, System.Windows.Media.Color color) => overlay2D.CreateWorldSpaceCircle(pos, up, sz, color);
+        ReplayViewportContent.DrawWorldSpaceCircleResetRequest += overlay2D.ClearWorldSpaceCircles;
         ReplayViewportContent.DrawLineRequest += (Point3D pos1, Point3D pos2, System.Windows.Media.Color color) => overlay2D.CreateLine(pos1, pos2, color);
         ReplayViewportContent.DrawLineResetRequest += overlay2D.ClearLines;
 
