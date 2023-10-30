@@ -122,7 +122,20 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         return string.Join('\n',ActiveLogs.Select(x=> $"{x.logHeader} {x.formattedLog}"));
     }
 
-    private string LogHeaderFormat(int frame, Entity entity, string category, string log) => entity == null ? log : $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) [{entity.Name}] -";
+    private string LogHeaderFormat(int frame, Entity entity, string category, string log)
+    {
+        if (entity == null) return log;
+        string categoryLabel = category;
+        if (entity.CategoryName != category && !string.IsNullOrEmpty(category))
+        {
+            categoryLabel = $"{entity.CategoryName}/{category}";
+        }
+        else if (string.IsNullOrEmpty(category))
+        {
+            categoryLabel = entity.CategoryName;
+        }
+        return $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) {categoryLabel} [{entity.Name}] -";
+    }
     private string LogFormat(int frame, Entity entity, string category, string log) => log;
 
     private IEnumerable<LogEntryRecord> CollectLogs()
