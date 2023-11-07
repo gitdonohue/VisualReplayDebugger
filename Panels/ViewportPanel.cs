@@ -13,7 +13,7 @@ class ViewportPanel : DockPanelWithToolbar, IDisposable
 {
     public ViewportPanel(MainWindow mainwindow)
     {
-        var replayViewport3d = new ReplayViewportWithOverlay(mainwindow.TimelineWindow, mainwindow.EntitySelection, mainwindow.VisibleEntities);
+        var replayViewport3d = new ReplayViewportWithOverlay(mainwindow.TimelineWindow, mainwindow.EntitySelection, mainwindow.HiddenEntities);
         this.Content = replayViewport3d;
         replayViewport3d.CameraManuallyMoved += () => mainwindow.Play.Set(false);
         

@@ -23,7 +23,8 @@ namespace VisualReplayDebugger;
 public partial class MainWindow : Window
 {
     public SelectionGroup<Entity> EntitySelection { get; private set; } = new();
-    public SelectionGroup<Entity> VisibleEntities { get; private set; } = new();
+    public SelectionGroup<Entity> HiddenEntities { get; private set; } = new();
+    public SelectionGroup<Entity> StarredEntities { get; private set; } = new();
 
     public WatchedBool Play { get; } = new();        
 
@@ -289,7 +290,7 @@ public partial class MainWindow : Window
 
                 EntitySelection.Clear();
                 EntitySelection.Add(Replay.Entities.Values.FirstOrDefault());
-                VisibleEntities.Set(Replay.Entities.Values);
+                HiddenEntities.Clear();
 
                 this.TimelineWindow.Fill();
 

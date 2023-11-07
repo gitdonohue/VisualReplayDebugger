@@ -14,7 +14,7 @@ class EntityTimelinesPanel : DockPanelWithToolbar, IDisposable
     public EntityTimelinesPanel(MainWindow mainwindow)
         : base(scrolling: false)
     {
-        var entityTimelineView = new ReplayEntitiesTimelinesView(mainwindow.TimelineWindow, mainwindow.EntitySelection, mainwindow.VisibleEntities, mainwindow.Replay);
+        var entityTimelineView = new ReplayEntitiesTimelinesView(mainwindow.TimelineWindow, mainwindow.EntitySelection, mainwindow.HiddenEntities, mainwindow.StarredEntities, mainwindow.Replay);
         this.Content = entityTimelineView;
         entityTimelineView.DoubleClicked += () => mainwindow.SetTimeRangeToSelected();
         
@@ -33,9 +33,13 @@ class EntityTimelinesPanel : DockPanelWithToolbar, IDisposable
 
         ToolBar.Items.Add(new Separator());
 
-        var showAll = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show Hidden Entities" };
-        showAll.BindTo(entityTimelineView.ShowAllEntities);
-        ToolBar.Items.Add(showAll);
+        //var showAll = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Eye), ToolTip = "Show Hidden Entities" };
+        //showAll.BindTo(entityTimelineView.ShowAllEntities);
+        //ToolBar.Items.Add(showAll);
+
+        var showStarredOnly = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Star), ToolTip = "Show starred entities only" };
+        showStarredOnly.BindTo(entityTimelineView.ShowStarredEntitiesOnly);
+        ToolBar.Items.Add(showStarredOnly);
 
         var zoomRange = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowsAltH), ToolTip = "Set time range to selected" };
         zoomRange.Click += (o, e) => mainwindow.SetTimeRangeToSelected();

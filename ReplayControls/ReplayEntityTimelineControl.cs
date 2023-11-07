@@ -21,12 +21,12 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
     public ReplayCaptureReader Replay { get; private set; }
     public ITimelineWindow TimelineWindow { get; private set; }
 
-    double startRatio;
-    double endRatio;
-    double[] markerPositions = new double[0];
+    readonly double StartRatio;
+    readonly double EndRatio;
+    readonly double[] MarkerPositions = new double[0];
 
-    FormattedText formattedText;
-    ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
+    readonly FormattedText FormattedText;
+    readonly ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
 
     public ReplayEntityTimelineControl(Entity entity, ReplayCaptureReader replay, ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView view)
     {
@@ -38,15 +38,15 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
         // Precalc ratios
         var lifetime = Replay.GetEntityLifeTime(Entity);
         double totalTime = Replay.TotalTime;
-        startRatio = Replay.GetTimeForFrame(lifetime.Start) / totalTime;
-        endRatio = Replay.GetTimeForFrame(lifetime.End) / totalTime;
+        StartRatio = Replay.GetTimeForFrame(lifetime.Start) / totalTime;
+        EndRatio = Replay.GetTimeForFrame(lifetime.End) / totalTime;
 
         if (Replay.LogEntityFrameMarkers.TryGetValue(entity, out var lst))
         {
-            markerPositions = lst.Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();
+            MarkerPositions = lst.Select(x => Replay.GetTimeForFrame(x) / totalTime).ToArray();
         }
 
-        formattedText = new FormattedText($"{entity.Path}",
+        FormattedText = new FormattedText($"{entity.Path}",
             System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface("Verdana"), 12, Brushes.Black, 1.0);
 
         TimelineWindow.Changed += SetDirty;
@@ -81,7 +81,7 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
         dc.DrawRectangle(BackgroundBrush, null, bounds);
 
         // Draw active region
-        var activebounds = new System.Windows.Rect(startRatio * ActualWidth, 0, (endRatio - startRatio) * ActualWidth, ActualHeight);
+        var activebounds = new System.Windows.Rect(StartRatio * ActualWidth, 0, (EndRatio - StartRatio) * ActualWidth, ActualHeight);
         dc.DrawRectangle(InRangeBrush, null, activebounds);
 
         // Draw Selection range
@@ -95,7 +95,7 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
 
         // Draw log ticks
         int lastTickPos = -1;
-        foreach (double tickRatio in markerPositions)
+        foreach (double tickRatio in MarkerPositions)
         {
             double tickXPos = tickRatio * ActualWidth;
             if ((int)tickXPos != lastTickPos) // Avoid drawing multiple tickmarks at the same spot
@@ -122,9 +122,10 @@ class EntityTimelineViewWithLabel : DockPanel, IDisposable
     public ReplayEntityTimelineControl EntityTimelineView { get; private set; }
     public Entity Entity { get; private set; }
 
-    ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
+    readonly ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
 
     public WatchedBool Visible { get; } = new(true);
+    public WatchedBool Starred { get; } = new(false);
 
     public double TimelineWidth => EntityTimelineView?.ActualWidth ?? ActualWidth;
     public double TimelineOffset => ActualWidth - TimelineWidth;
@@ -137,6 +138,13 @@ class EntityTimelineViewWithLabel : DockPanel, IDisposable
         Visible.Changed += () => { visibilityBtn.Content = IconProvider.GetIcon(Visible ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash); };
         visibilityBtn.BindTo(Visible);
         this.Children.Add(visibilityBtn);
+        Visible.Set(!view.HiddenEntities.Contains(entity));
+
+        var starredBtn = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Star), Width = 16, Height = 16 };
+        Starred.Changed += () => { starredBtn.Content = IconProvider.GetIcon(Starred ? FontAwesomeIcon.StarHalfStroke : FontAwesomeIcon.Star); };
+        starredBtn.BindTo(Starred);
+        this.Children.Add(starredBtn);
+        Starred.Set(view.StarredEntities.Contains(entity));
 
         var label = new TextBlock();
         label.Padding = new Thickness() { Left = 4 };
@@ -153,33 +161,53 @@ class EntityTimelineViewWithLabel : DockPanel, IDisposable
 
         this.ToolTip = $"{entity.Path}";
 
-        ReplayEntitiesTimelinesView.VisibleEntities.Changed += VisibleEntities_Changed;
+        ReplayEntitiesTimelinesView.HiddenEntities.Changed += HiddenEntities_Changed;
         Visible.Changed += Visible_Changed;
+
+        ReplayEntitiesTimelinesView.StarredEntities.Changed += StarredEntities_Changed;
+        Starred.Changed += Starred_Changed;
     }
 
     public void Dispose()
     {
-        ReplayEntitiesTimelinesView.VisibleEntities.Changed -= VisibleEntities_Changed;
+        ReplayEntitiesTimelinesView.HiddenEntities.Changed -= HiddenEntities_Changed;
         Visible.Changed -= Visible_Changed;
 
         EntityTimelineView?.Dispose();
         EntityTimelineView = null;
     }
 
-    private void VisibleEntities_Changed()
+    private void HiddenEntities_Changed()
     {
-        Visible.Set(ReplayEntitiesTimelinesView.VisibleEntities.Contains(Entity));
+        Visible.Set(!ReplayEntitiesTimelinesView.HiddenEntities.Contains(Entity));
     }
 
     private void Visible_Changed()
     {
-        if (Visible)
+        if (!Visible)
         {
-            ReplayEntitiesTimelinesView.VisibleEntities.Add(Entity);
+            ReplayEntitiesTimelinesView.HiddenEntities.Add(Entity);
         }
         else
         {
-            ReplayEntitiesTimelinesView.VisibleEntities.Remove(Entity);
+            ReplayEntitiesTimelinesView.HiddenEntities.Remove(Entity);
+        }
+    }
+
+    private void StarredEntities_Changed()
+    {
+        Starred.Set(ReplayEntitiesTimelinesView.StarredEntities.Contains(Entity));
+    }
+
+    private void Starred_Changed()
+    {
+        if (Starred)
+        {
+            ReplayEntitiesTimelinesView.StarredEntities.Add(Entity);
+        }
+        else
+        {
+            ReplayEntitiesTimelinesView.StarredEntities.Remove(Entity);
         }
     }
 }

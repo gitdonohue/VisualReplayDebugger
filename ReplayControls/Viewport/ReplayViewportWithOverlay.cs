@@ -44,7 +44,7 @@ public class ReplayViewportWithOverlay : Grid
 
     private ReplayViewportContent ReplayViewportContent { get; set; }
 
-    public ReplayViewportWithOverlay(TimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> visibleEntities)
+    public ReplayViewportWithOverlay(TimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> hiddenset)
     {
         var viewport3D = new HelixViewport3D();
         viewport3D.Background = Brushes.LightGray;
@@ -57,7 +57,7 @@ public class ReplayViewportWithOverlay : Grid
         viewport3D.Camera.FarPlaneDistance = UNIT_SCALE * 100000;
         viewport3D.LookAt(new Point3D(), UNIT_SCALE * 100, 200);
 
-        ReplayViewportContent = new ReplayViewportContent(viewport3D.Viewport, null, timelineWindow, selectionset, visibleEntities, DrawCategoryFilter, DrawColorFilter);
+        ReplayViewportContent = new ReplayViewportContent(viewport3D.Viewport, null, timelineWindow, selectionset, hiddenset, DrawCategoryFilter, DrawColorFilter);
         ReplayViewportContent.FollowCameraEnabled.BindWith(FollowCameraEnabled);
         ReplayViewportContent.FollowSelectionEnabled.BindWith(FollowSelectionEnabled);
         ReplayViewportContent.ShowAllNames.BindWith(ShowAllNames);

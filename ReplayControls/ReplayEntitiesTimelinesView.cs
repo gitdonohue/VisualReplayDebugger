@@ -23,7 +23,7 @@ namespace VisualReplayDebugger
         public WatchedVariable<string> FilterText { get; } = new();
         public ITimelineWindow TimelineWindow { get; private set; }
         public SelectionGroup<string> TimelineEntityCategoryFilter { get; private set; } = new();
-        public WatchedBool ShowAllEntities { get; } = new(true);
+        public WatchedBool ShowStarredEntitiesOnly { get; } = new(false);
 
         public int LabelWidth => 250;
 
@@ -40,7 +40,8 @@ namespace VisualReplayDebugger
 
         public event Action DoubleClicked;
 
-        public SelectionGroup<Entity> VisibleEntities { get; private set; }
+        public SelectionGroup<Entity> HiddenEntities { get; private set; }
+        public SelectionGroup<Entity> StarredEntities { get; private set; }
 
         // Mouse handler derived to handle offset
         public class TimelineMouseControlHandlerEx : ReplayControls.TimelineMouseControlHandler
@@ -55,10 +56,11 @@ namespace VisualReplayDebugger
         }
         readonly TimelineMouseControlHandlerEx MouseHandler;
 
-        public ReplayEntitiesTimelinesView(ITimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> visibleset, ReplayCaptureReader replay)
+        public ReplayEntitiesTimelinesView(ITimelineWindow timelineWindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> hiddenset, SelectionGroup<Entity> starredset, ReplayCaptureReader replay)
         {
             TimelineWindow = timelineWindow;
-            VisibleEntities = visibleset;
+            HiddenEntities = hiddenset;
+            StarredEntities = starredset;
 
             this.HorizontalContentAlignment = System.Windows.HorizontalAlignment.Stretch;
 
@@ -80,7 +82,8 @@ namespace VisualReplayDebugger
 
             FilterText.Changed += Rebuild;
             TimelineEntityCategoryFilter.Changed += Rebuild;
-            ShowAllEntities.Changed += Rebuild;
+            //ShowAllEntities.Changed += Rebuild;
+            ShowStarredEntitiesOnly.Changed += Rebuild;
 
             MouseHandler = new TimelineMouseControlHandlerEx(TimelineWindow, this, slideWindowWhileScurbbing:false);
             this.MouseDown += MouseHandler.OnMouseDown;
@@ -104,9 +107,10 @@ namespace VisualReplayDebugger
                 foreach (var entityNode in replay.EntitiesGraph.EnumerateDepthFirst().Where(x=>x.Entity != null))
                 {
                     var entity = entityNode.Entity;
-                    if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
+                    //if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
                     if (!filter.Empty && !(filter.Match(entity.Name) || filter.Match(entity.Path)) ) continue;
+                    if (ShowStarredEntitiesOnly && !StarredEntities.Contains(entity)) continue;
                     this.Items.Add(new EntityTimelineViewWithLabel(entity, entityNode.PathName, replay, TimelineWindow, LabelWidth, this));
                 }
             }

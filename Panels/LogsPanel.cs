@@ -16,7 +16,7 @@ class LogsPanel : DockPanelWithToolbar, IDisposable
     public LogsPanel(MainWindow mainwindow)
         : base(scrolling: true)
     {
-        var replayLogsView = new ReplayLogsControlEx2(mainwindow.Replay, mainwindow.TimelineWindow, mainwindow.EntitySelection);
+        var replayLogsView = new ReplayLogsControlEx2(mainwindow.Replay, mainwindow.TimelineWindow, mainwindow.EntitySelection, mainwindow.HiddenEntities, mainwindow.StarredEntities);
 
         this.Content = replayLogsView;
         mainwindow.ReplayChanged += (replay) => replayLogsView.Replay = replay;

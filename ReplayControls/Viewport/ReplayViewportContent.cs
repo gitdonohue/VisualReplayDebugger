@@ -62,7 +62,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public event Action<Point3D> FocusAtRequested;
 
     public SelectionGroup<Entity> EntitySelection { get; private set; }
-    public SelectionGroup<Entity> VisibleEntities { get; private set; }
+    public SelectionGroup<Entity> HiddenEntities { get; private set; }
 
     public SelectionGroup<string> DrawCategoryFilter { get; private set; }
     public SelectionGroup<ReplayCapture.Color> DrawColorFilter { get; private set; }
@@ -73,7 +73,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public WatchedBool ShowAllPaths { get; } = new(true);
     public WatchedBool ShowDrawPrimitives { get; } = new(true);
     public WatchedBool ShowAllDrawPrimitivesInRange { get; } = new(true);
-    public ReplayViewportContent(Viewport3D viewport, ReplayCaptureReader replay, TimelineWindow timelinewindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> visibleEntities,
+    public ReplayViewportContent(Viewport3D viewport, ReplayCaptureReader replay, TimelineWindow timelinewindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> hiddenset,
         SelectionGroup<string> drawCategoryFilter, SelectionGroup<ReplayCapture.Color> drawColorFilter)
     {
         Viewport3D = viewport;
@@ -86,13 +86,13 @@ public class ReplayViewportContent // TODO: Make IDisposable
         EntitySelection = selectionset;
         EntitySelection.Changed += () => { RecalcGeometry(); SetTime(TimelineWindow.Timeline.Cursor); }; // TODO: Make IDiposable
 
-        VisibleEntities = visibleEntities;
-        VisibleEntities.Changed += VisibleEntities_Changed;
+        HiddenEntities = hiddenset;
+        HiddenEntities.Changed += HiddenEntities_Changed;
 
         DrawCategoryFilter = drawCategoryFilter;
-        DrawCategoryFilter.Changed += VisibleEntities_Changed;
+        DrawCategoryFilter.Changed += HiddenEntities_Changed;
         DrawColorFilter = drawColorFilter;
-        DrawColorFilter.Changed += VisibleEntities_Changed;
+        DrawColorFilter.Changed += HiddenEntities_Changed;
 
         viewport.Camera.Changed += Camera_Changed;
         TimelineWindow.Changed += Timeline_Changed;
@@ -117,12 +117,12 @@ public class ReplayViewportContent // TODO: Make IDisposable
         return linegroup;
     }
 
-    private void VisibleEntities_Changed()
+    private void HiddenEntities_Changed()
     {
         foreach (var kv in EntityModels)
         {
             var entity = kv.Key;
-            bool isVisible = VisibleEntities.Contains(entity);
+            bool isVisible = !HiddenEntities.Contains(entity);
             foreach ((var xform,var geom) in kv.Value)
             {
                 Model3D model = geom.Content;

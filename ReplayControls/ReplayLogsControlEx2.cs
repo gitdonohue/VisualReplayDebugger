@@ -7,6 +7,7 @@ using ReplayCapture;
 using SelectionSet;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,8 +26,10 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
     public WatchedVariable<string> SearchText { get; } = new();
     public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
     public WatchedBool EntitySelectionLocked { get; } = new(false);
+    
     private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private List<Entity> LockedSelection = new();
+
+    private readonly List<Entity> LockedSelection = new();
     public SelectionGroup<string> LogCategoryFilter { get; } = new();
     public SelectionGroup<ReplayCapture.Color> LogColorFilter { get; } = new();
     public ScrollViewer ScrollOwner { get; set; }
@@ -63,20 +66,26 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         public int Index;
     }
 
-    private SelectionGroup<Entity> EntitySelection;
-    private ITimelineWindow TimelineWindow;
+    private readonly SelectionGroup<Entity> EntitySelection;
+    private readonly SelectionGroup<Entity> HiddenSelection;
+    private readonly SelectionGroup<Entity> StarredSelection;
+    private readonly ITimelineWindow TimelineWindow;
 
-    private SelectionSpans SelectionSpans = new();
+    private readonly SelectionSpans SelectionSpans = new();
     private int LastSelectionIndex = -1;
 
-    public ReplayLogsControlEx2(ReplayCaptureReader replay, ITimelineWindow timelineWindow, SelectionGroup<Entity> entitySelection)
+    public ReplayLogsControlEx2(ReplayCaptureReader replay, ITimelineWindow timelineWindow, SelectionGroup<Entity> entitySelection, SelectionGroup<Entity> hiddenSelection, SelectionGroup<Entity> starredSelection)
     {
         Replay = replay;
         EntitySelection = entitySelection;
+        HiddenSelection = hiddenSelection;
+        StarredSelection = starredSelection;
         TimelineWindow = timelineWindow;
 
         TimelineWindow.Changed += TimelineWindow_Changed;
         EntitySelection.Changed += EntitySelection_Changed;
+        StarredSelection.Changed += Selection_Changed;
+        HiddenSelection.Changed += Selection_Changed;
         
         EntitySelectionLocked.Changed += RefreshLogsAndFilters;
         FilterText.Changed += RefreshLogsAndFilters;
@@ -84,7 +93,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         LogCategoryFilter.Changed += RefreshLogsAndFilters;
         LogColorFilter.Changed += RefreshLogsAndFilters;
         
-        this.IsVisibleChanged += (o, e) => RefreshLogs();
+        this.IsVisibleChanged += (o, e) => RefreshLogsAndFilters();
 
         this.MouseDown += OnMouseDown;
         //EventManager.RegisterClassHandler(typeof(Control), MouseDownEvent, new RoutedEventHandler(MouseDownHandler)); // Workaround for missing mouse events
@@ -186,6 +195,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         var filter = new SearchContext(FilterText.Value);
         FilteredLogs = AllLogs.Where(x =>
             (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
+            && (!HiddenSelection.Contains(x.entity))
             && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
             && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
             && (filter.Match(x.logHeader) || filter.Match(x.formattedLog)))
@@ -312,8 +322,13 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         {
             LockedSelection.Clear();
             LockedSelection.AddRange(EntitySelection.SelectionSet);
-            RefreshLogs();
         }
+        Selection_Changed();
+    }
+
+    private void Selection_Changed()
+    {
+        RefreshLogsAndFilters();
     }
 
     public void ScrollingUpdated(ScrollViewer scrollViewer)
@@ -393,6 +408,12 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
 
         int lineNum = (int)Math.Floor(mousePos / LineHeight);
         var logLine = ActiveLogs.Skip(lineNum).FirstOrDefault();
+
+        if (logLine.entity != null)
+        {
+            EntitySelection.Set(logLine.entity);
+        }
+
         if (logLine.frame != 0)
         {
             var t = Replay.GetTimeForFrame(logLine.frame+1);
@@ -440,9 +461,10 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
 
     private int LineHeight => 16;
     private int TextMargin => 4;
-    private double PIXELS_DPI = 1.25;
-    private static System.Globalization.CultureInfo TextCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-us");
-    private static Typeface TextTypeface = new Typeface("Lucida");
+    private readonly double PIXELS_DPI = 1.25;
+    private static readonly System.Globalization.CultureInfo TextCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en-us");
+    private static readonly Typeface TextTypeface = new(new FontFamily("monospace"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+    private static readonly Typeface TextTypefaceBold = new(new FontFamily("monospace"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -491,7 +513,8 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
                 logDrawPos.X += headerText.Width + 4;
 
                 // TODO: test if reusing these make a difference
-                var logText = new FormattedText(line.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, LineHeight - TextMargin, line.color.ToBrush(), PIXELS_DPI);
+                bool isStarred = StarredSelection.Contains(line.entity);
+                var logText = new FormattedText(line.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, isStarred ? TextTypefaceBold : TextTypeface, LineHeight - TextMargin, line.color.ToBrush(), PIXELS_DPI);
                 dc.DrawText(logText, logDrawPos);
             }
             if (drawpos.Y > (VerticalOffset + ViewportHeight))
