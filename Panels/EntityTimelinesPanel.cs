@@ -58,7 +58,6 @@ class EntityTimelinesPanel : DockPanelWithToolbar, IDisposable
         unstarSelected.Click += (o, e) => mainwindow.StarredEntities.Remove(mainwindow.EntitySelection.SelectionSet);
         ContextMenu.Items.Add(unstarSelected);
 
-        ContextMenu = new ContextMenu();
         var hideSelected = new MenuItem() { Header = "Hide selected" };
         hideSelected.Click += (o, e) => mainwindow.HiddenEntities.Add(mainwindow.EntitySelection.SelectionSet);
         ContextMenu.Items.Add(hideSelected);
