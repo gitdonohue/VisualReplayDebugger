@@ -48,6 +48,24 @@ class EntityTimelinesPanel : DockPanelWithToolbar, IDisposable
         var clearSelection = new Button() { Content = IconProvider.GetIcon(FontAwesomeIcon.WindowClose), ToolTip = "Clear selection" };
         clearSelection.Click += (o, e) => { mainwindow.EntitySelection.Clear(); };
         ToolBar.Items.Add(clearSelection);
+
+        ContextMenu = new ContextMenu();
+        var starSelected = new MenuItem() { Header = "Star selected" };
+        starSelected.Click += (o, e) => mainwindow.StarredEntities.Add(mainwindow.EntitySelection.SelectionSet);
+        ContextMenu.Items.Add(starSelected);
+
+        var unstarSelected = new MenuItem() { Header = "UnStar selected" };
+        unstarSelected.Click += (o, e) => mainwindow.StarredEntities.Remove(mainwindow.EntitySelection.SelectionSet);
+        ContextMenu.Items.Add(unstarSelected);
+
+        ContextMenu = new ContextMenu();
+        var hideSelected = new MenuItem() { Header = "Hide selected" };
+        hideSelected.Click += (o, e) => mainwindow.HiddenEntities.Add(mainwindow.EntitySelection.SelectionSet);
+        ContextMenu.Items.Add(hideSelected);
+
+        var unhideSelected = new MenuItem() { Header = "UnHide selected" };
+        unhideSelected.Click += (o, e) => mainwindow.HiddenEntities.Remove(mainwindow.EntitySelection.SelectionSet);
+        ContextMenu.Items.Add(unhideSelected);
     }
 
     public void Dispose()

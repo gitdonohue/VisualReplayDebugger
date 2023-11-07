@@ -19,10 +19,29 @@ public class SelectionGroup<T>
             Changed?.Invoke();
         }
     }
+    public void Add(IEnumerable<T> elements)
+    {
+        int initSize = SelectionSet.Count;
+        SelectionSet.UnionWith(elements);
+        if (SelectionSet.Count != initSize)
+        {
+            Changed?.Invoke();
+        }
+    }
 
     public void Remove(T element)
     {
         if ( SelectionSet.Remove(element) )
+        {
+            Changed?.Invoke();
+        }
+    }
+
+    public void Remove(IEnumerable<T> elements)
+    {
+        int initSize = SelectionSet.Count;
+        foreach(var element in elements) SelectionSet.Remove(element);
+        if (SelectionSet.Count != initSize)
         {
             Changed?.Invoke();
         }
