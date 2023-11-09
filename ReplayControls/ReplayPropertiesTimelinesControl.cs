@@ -17,8 +17,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     public WatchedVariable<string> FilterText { get; } = new();
     public WatchedBool EntitySelectionLocked { get; } = new(false);
     private readonly SelectionGroup<Entity> EntitySelection;
-    private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private readonly List<Entity> LockedSelection = new();
+    private List<Entity> SelectedEntities { get; } = new();
+    private const int MaxSelectedElements = 10;
 
     public WatchedBool StackedByParameterDepth { get; } = new(true);
     public SelectionGroup<string> ParameterFilter { get; } = new();
@@ -149,10 +149,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
         if (!EntitySelectionLocked)
         {
-            LockedSelection.Clear();
-            LockedSelection.AddRange(EntitySelection.SelectionSet);
-
-            //Height = CalcHeight();
+            SelectedEntities.Clear();
+            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
             SetDirty();
         }
     }

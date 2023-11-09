@@ -26,10 +26,10 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
     public WatchedVariable<string> SearchText { get; } = new();
     public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
     public WatchedBool EntitySelectionLocked { get; } = new(false);
-    
-    private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
 
-    private readonly List<Entity> LockedSelection = new();
+    private List<Entity> SelectedEntities { get; } = new();
+    private const int MaxSelectedElements = 10;
+
     public SelectionGroup<string> LogCategoryFilter { get; } = new();
     public SelectionGroup<ReplayCapture.Color> LogColorFilter { get; } = new();
     public ScrollViewer ScrollOwner { get; set; }
@@ -86,7 +86,9 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         EntitySelection.Changed += EntitySelection_Changed;
         StarredSelection.Changed += Selection_Changed;
         HiddenSelection.Changed += Selection_Changed;
-        
+        EntitySelection_Changed();
+
+
         EntitySelectionLocked.Changed += RefreshLogsAndFilters;
         FilterText.Changed += RefreshLogsAndFilters;
         ShowSelectedLogsOnly.Changed += RefreshLogsAndFilters;
@@ -320,9 +322,10 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
     {
         if (!EntitySelectionLocked)
         {
-            LockedSelection.Clear();
-            LockedSelection.AddRange(EntitySelection.SelectionSet);
+            SelectedEntities.Clear();
+            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
         }
+
         Selection_Changed();
     }
 

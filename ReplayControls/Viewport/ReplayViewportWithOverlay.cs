@@ -15,8 +15,8 @@ namespace VisualReplayDebugger;
 
 public class ReplayViewportWithOverlay : Grid
 {
-    private static Vector3D UP = new(0, 0, 1);
-    private static readonly double UNIT_SCALE = 100.0;
+    private static Vector3D UP = Constants.UP;
+    private static readonly double UNIT_SCALE = Constants.UNIT_LENGTH;
 
     public WatchedBool FollowCameraEnabled { get; } = new(true);
     public WatchedBool FollowSelectionEnabled { get; } = new(false);
@@ -24,6 +24,9 @@ public class ReplayViewportWithOverlay : Grid
     public WatchedBool ShowAllPaths { get; } = new(false);
     public WatchedBool ShowDrawPrimitives { get; } = new(true);
     public WatchedBool ShowAllDrawPrimitivesInRange { get; } = new(false);
+    public WatchedBool ShowEntityGeometry { get; } = new(true);
+    public WatchedBool ShowEntityAxii { get; } = new(true);
+    public WatchedBool ShowEntityCircle { get; } = new(true);
     public SelectionGroup<string> DrawCategoryFilter { get; } = new();
     public SelectionGroup<ReplayCapture.Color> DrawColorFilter { get; } = new();
 
@@ -63,6 +66,9 @@ public class ReplayViewportWithOverlay : Grid
         ReplayViewportContent.ShowAllNames.BindWith(ShowAllNames);
         ReplayViewportContent.ShowAllPaths.BindWith(ShowAllPaths);
         ReplayViewportContent.ShowDrawPrimitives.BindWith(ShowDrawPrimitives);
+        ReplayViewportContent.ShowEntityAxii.BindWith(ShowEntityAxii);
+        ReplayViewportContent.ShowEntityGeometry.BindWith(ShowEntityGeometry);
+        ReplayViewportContent.ShowEntityCircle.BindWith(ShowEntityCircle);
         ReplayViewportContent.ShowAllDrawPrimitivesInRange.BindWith(ShowAllDrawPrimitivesInRange);
         ReplayViewportContent.FocusAtRequested += (p) => { viewport3D.LookAt(p, 200); };
         viewport3D.Children.Add(ReplayViewportContent.ModelVisual3D);
@@ -71,7 +77,10 @@ public class ReplayViewportWithOverlay : Grid
         var overlay2D = new Viewport3DOverlayHelper(viewport3D.Viewport);
         timelineWindow.Changed += overlay2D.SetDirty;
         selectionset.Changed += overlay2D.SetDirty;
+        hiddenset.Changed += overlay2D.SetDirty;
         ShowAllNames.Changed += overlay2D.SetDirty;
+        ShowEntityAxii.Changed += overlay2D.SetDirty;
+        ShowEntityCircle.Changed += overlay2D.SetDirty;
         ReplayViewportContent.DrawLabelRequest += (string txt, Point3D pos, int sz) => overlay2D.CreateLabel(txt, pos, sz, Colors.Black);
         ReplayViewportContent.DrawLabelResetRequest += overlay2D.ClearLabels;
         ReplayViewportContent.DrawScreenSpaceCircleRequest += (Point3D pos, double sz, System.Windows.Media.Color color) => overlay2D.CreateScreenSpaceCircle(pos,sz,color);
@@ -93,7 +102,8 @@ public class ReplayViewportWithOverlay : Grid
     private void OnMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         var mousePos = e.GetPosition(ReplayViewportContent.Viewport3D);
-        ReplayViewportContent.OnMouseDown(mousePos);
+        bool isDoubleClick = e.ClickCount > 1;
+        ReplayViewportContent.OnMouseDown(mousePos, isDoubleClick);
     }
 
     public void FocusOnSelection() => ReplayViewportContent.FocusOnSelection();

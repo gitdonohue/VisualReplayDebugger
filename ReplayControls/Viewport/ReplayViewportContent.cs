@@ -72,7 +72,11 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public WatchedBool ShowAllNames { get; } = new(true);
     public WatchedBool ShowAllPaths { get; } = new(true);
     public WatchedBool ShowDrawPrimitives { get; } = new(true);
+    public WatchedBool ShowEntityGeometry { get; } = new(true);
+    public WatchedBool ShowEntityAxii { get; } = new(true);
+    public WatchedBool ShowEntityCircle { get; } = new(true);
     public WatchedBool ShowAllDrawPrimitivesInRange { get; } = new(true);
+
     public ReplayViewportContent(Viewport3D viewport, ReplayCaptureReader replay, TimelineWindow timelinewindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> hiddenset,
         SelectionGroup<string> drawCategoryFilter, SelectionGroup<ReplayCapture.Color> drawColorFilter)
     {
@@ -87,12 +91,13 @@ public class ReplayViewportContent // TODO: Make IDisposable
         EntitySelection.Changed += () => { RecalcGeometry(); SetTime(TimelineWindow.Timeline.Cursor); }; // TODO: Make IDiposable
 
         HiddenEntities = hiddenset;
-        HiddenEntities.Changed += HiddenEntities_Changed;
+        HiddenEntities.Changed += VisibleEntitiesChanged;
+        ShowEntityGeometry.Changed += VisibleEntitiesChanged;
 
         DrawCategoryFilter = drawCategoryFilter;
-        DrawCategoryFilter.Changed += HiddenEntities_Changed;
+        DrawCategoryFilter.Changed += VisibleEntitiesChanged;
         DrawColorFilter = drawColorFilter;
-        DrawColorFilter.Changed += HiddenEntities_Changed;
+        DrawColorFilter.Changed += VisibleEntitiesChanged;
 
         viewport.Camera.Changed += Camera_Changed;
         TimelineWindow.Changed += Timeline_Changed;
@@ -101,6 +106,8 @@ public class ReplayViewportContent // TODO: Make IDisposable
         ShowAllNames.Changed += Timeline_Changed;
         ShowAllPaths.Changed += Redraw;
         ShowDrawPrimitives.Changed += Redraw;
+        ShowEntityAxii.Changed += Redraw;
+        ShowEntityCircle.Changed += Redraw;
         ShowAllDrawPrimitivesInRange.Changed += Redraw;
         this.Viewport3D.IsVisibleChanged += (o, e) => Redraw(); // TODO: Make IDiposable
 
@@ -117,12 +124,12 @@ public class ReplayViewportContent // TODO: Make IDisposable
         return linegroup;
     }
 
-    private void HiddenEntities_Changed()
+    private void VisibleEntitiesChanged()
     {
         foreach (var kv in EntityModels)
         {
             var entity = kv.Key;
-            bool isVisible = !HiddenEntities.Contains(entity);
+            bool isVisible = ShowEntityGeometry && !HiddenEntities.Contains(entity);
             foreach ((var xform,var geom) in kv.Value)
             {
                 Model3D model = geom.Content;
@@ -149,11 +156,12 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     Model3DGroup.Children.Remove(geom.Content);
                 }
             }
-        }
+        }        
+
         Redraw();
     }
 
-    public void OnMouseDown(System.Windows.Point mousePos)
+    public void OnMouseDown(System.Windows.Point mousePos, bool isDoubleclick)
     {
         // Picking
         // TODO: Fix issue with sometimes needing to have a clear selection for picking to work correctly
@@ -185,6 +193,11 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     else
                     {
                         EntitySelection.Set(entity);
+
+                        if (isDoubleclick)
+                        {
+                            FocusOnSelection();
+                        }
                     }
                     return HitTestResultBehavior.Stop;
                 }
@@ -558,6 +571,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         {
             bool isAlive = Replay.GetEntityLifeTime(entity).InRange(frame);
             bool isSelected = EntitySelection.SelectionSet.Contains(entity);
+            bool isVisible = !HiddenEntities.SelectionSet.Contains(entity);
 
             var xform = Replay.GetEntityTransform(entity, time);
             var entityTransform = xform.ToTransform3D();
@@ -589,7 +603,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             //    DrawLabelRequest?.Invoke(txt, pos.ToPoint(), 10);
             //}
 
-            if (isAlive && (ShowAllNames || isSelected))
+            if (isAlive && (isVisible || isSelected) && (ShowAllNames || isSelected))
             {
                 DrawLabelRequest?.Invoke(entity.Name, xform.Translation.ToPoint(), 12);
             }
@@ -597,10 +611,23 @@ public class ReplayViewportContent // TODO: Make IDisposable
             //text.Transform = new TranslateTransform3D() { OffsetX = pos.X, OffsetY = pos.Y, OffsetZ = pos.Z };
             //text.DepthOffset = geom.Visible ? 0.001 : 0.01;
 
-            if (isAlive)
+            if (isAlive && isVisible)
             {
                 // Circle to show entity position
-                DrawScreenSpaceCircleRequest?.Invoke(xform.Translation.ToPoint(), 8.0, isSelected ? Colors.Red : Colors.Blue);
+                if (ShowEntityCircle)
+                {
+                    DrawScreenSpaceCircleRequest?.Invoke(xform.Translation.ToPoint(), 8.0, isSelected ? Colors.Red : Colors.Blue);            
+                }
+
+                // Axis Lines (2d overlay)
+                if (ShowEntityAxii)
+                {
+                    const float axisLen = Constants.UNIT_LENGTH;
+                    var origin = entityTransform.Transform(new Point3D());
+                    DrawLineRequest?.Invoke(origin, entityTransform.Transform(new Point3D(axisLen, 0, 0)), Colors.Red);
+                    DrawLineRequest?.Invoke(origin, entityTransform.Transform(new Point3D(0, axisLen, 0)), Colors.Green);
+                    DrawLineRequest?.Invoke(origin, entityTransform.Transform(new Point3D(0, 0, axisLen)), Colors.Blue);                
+                }
 
                 // Lines (2d overlay)
                 EntityEx ex = entity as EntityEx;
@@ -629,8 +656,8 @@ public class ReplayViewportContent // TODO: Make IDisposable
             var cam = (Viewport3D.Camera as PerspectiveCamera);
             cam.FieldOfView = 60;
             cam.Position = xform.Transform(new Point3D());
-            cam.UpDirection = new Vector3D(0, 0, 1);
-            cam.LookDirection = xform.Transform(new Vector3D(-1, 0, 0));
+            cam.UpDirection = Constants.UP;
+            cam.LookDirection = xform.Transform(Constants.FRONT);
             IsCameraBeingModified = false;
         }
 

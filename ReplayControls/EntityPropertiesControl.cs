@@ -16,8 +16,8 @@ class EntityPropertiesControl : TextBox
     public WatchedVariable<string> FilterText { get; } = new();
     public WatchedBool EntitySelectionLocked { get; } = new(false);
     private readonly SelectionGroup<Entity> EntitySelection;
-    private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private readonly List<Entity> LockedSelection = new();
+    private List<Entity> SelectedEntities { get; } = new();
+    private const int MaxSelectedElements = 10;
 
     private readonly ITimelineWindow TimelineWindow;
 
@@ -46,6 +46,7 @@ class EntityPropertiesControl : TextBox
         FilterText.Changed += Refresh;
         EntitySelectionLocked.Changed += Refresh;
         EntitySelection.Changed += EntitySelection_Changed;
+        EntitySelection_Changed();
     }
 
     public void Refresh()
@@ -63,9 +64,9 @@ class EntityPropertiesControl : TextBox
     {
         if (!EntitySelectionLocked)
         {
+            SelectedEntities.Clear();
+            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
             Refresh();
-            LockedSelection.Clear();
-            LockedSelection.AddRange(EntitySelection.SelectionSet);
         }
     }
 }

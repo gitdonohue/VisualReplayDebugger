@@ -54,6 +54,20 @@ class ViewportPanel : DockPanelWithToolbar, IDisposable
 
         ToolBar.Items.Add(new Separator());
 
+        var showEnitityGeometry = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.PaintRoller), ToolTip = "Show entities Geometry" };
+        showEnitityGeometry.BindTo(replayViewport3d.ShowEntityGeometry);
+        ToolBar.Items.Add(showEnitityGeometry);
+
+        var showEnitityCircle = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Circle), ToolTip = "Show entities Circle" };
+        showEnitityCircle.BindTo(replayViewport3d.ShowEntityCircle);
+        ToolBar.Items.Add(showEnitityCircle);
+
+        var showEnitityAxii = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowsUpDownLeftRight), ToolTip = "Show entities Axis" };
+        showEnitityAxii.BindTo(replayViewport3d.ShowEntityAxii);
+        ToolBar.Items.Add(showEnitityAxii);
+
+        ToolBar.Items.Add(new Separator());
+
         var cb = new CheckComboBoxControl("Draw Categories");
         if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.DrawCategories, true);
         mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.DrawCategories, true);

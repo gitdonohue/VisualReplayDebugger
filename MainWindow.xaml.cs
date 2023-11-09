@@ -20,6 +20,13 @@ using FontAwesomeIcon = FontAwesome.Sharp.IconChar;
 
 namespace VisualReplayDebugger;
 
+public static class Constants
+{
+    public static System.Windows.Media.Media3D.Vector3D UP => new(0, 0, 1);
+    public static System.Windows.Media.Media3D.Vector3D FRONT => new(-1, 0, 0);
+    public const float UNIT_LENGTH = 100.0f;
+}
+
 public partial class MainWindow : Window
 {
     public SelectionGroup<Entity> EntitySelection { get; private set; } = new();

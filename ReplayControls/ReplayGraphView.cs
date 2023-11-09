@@ -48,8 +48,8 @@ public class ReplayGraphView : UserControl, IDisposable
     private static readonly System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
     private static readonly Typeface TextTypeface = new("Arial");
 
-    private IEnumerable<Entity> SelectedEntities => EntitySelectionLocked ? LockedSelection : EntitySelection.SelectionSet;
-    private readonly List<Entity> LockedSelection = new();
+    private List<Entity> SelectedEntities { get; } = new();
+    private const int MaxSelectedElements = 10;
 
     readonly VisualReplayDebugger.ReplayControls.TimelineMouseControlHandler MouseHandler;
 
@@ -62,6 +62,7 @@ public class ReplayGraphView : UserControl, IDisposable
         TimelineWindow.Changed += TimelineWindow_Changed;
         EntitySelection = selectionset;
         EntitySelection.Changed += EntitySelection_Changed;
+        EntitySelection_Changed();
 
         EntitySelectionLocked.Changed += RequestFullRedraw;
         GraphsFilled.Changed += RequestFullRedraw;
@@ -194,9 +195,9 @@ public class ReplayGraphView : UserControl, IDisposable
     {
         if (!EntitySelectionLocked)
         {
+            SelectedEntities.Clear();
+            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
             RequestFullRedraw();
-            LockedSelection.Clear();
-            LockedSelection.AddRange(EntitySelection.SelectionSet);
         }
     }
 
