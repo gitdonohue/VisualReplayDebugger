@@ -21,6 +21,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     private const int MaxSelectedElements = 10;
 
     public WatchedBool StackedByParameterDepth { get; } = new(true);
+    public WatchedBool StackedByParameterDepthOnlyChanges { get; } = new(false);
     public SelectionGroup<string> ParameterFilter { get; } = new();
 
     private readonly ITimelineWindow TimelineWindow;
@@ -60,6 +61,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         EntitySelectionLocked.Changed += SetDirty;
         ParameterFilter.Changed += SetDirty;
         StackedByParameterDepth.Changed += SetDirty;
+        StackedByParameterDepthOnlyChanges.Changed += SetDirty;
         FilterText.Changed += SetDirty;
 
 
@@ -286,7 +288,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         {
             foreach ((Entity entity, string param, var entryList) in EnumerateSelectedEntitiesPropertiesChannels())
             {
-                int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min();
+                int minDepth = StackedByParameterDepthOnlyChanges ? entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min() : 0;
                 int maxDepth = entryList.Select(x => x.depth).DefaultIfEmpty().Max();
                 rowCount += maxDepth - minDepth + 1;
             }
@@ -361,7 +363,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             }
             else
             {
-                int minDepth = entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min();
+                int minDepth = StackedByParameterDepthOnlyChanges ? entryList.Where(x => x.SplitValues.Any()).Select(x => x.depth).DefaultIfEmpty().Min() : 0;
                 int maxDepth = entryList.Select(x => x.depth).DefaultIfEmpty().Max();
                 for (int depth = minDepth; depth <= maxDepth; ++depth)
                 {

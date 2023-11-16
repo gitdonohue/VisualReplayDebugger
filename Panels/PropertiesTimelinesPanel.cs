@@ -26,6 +26,10 @@ class PropertiesTimelinesPanel : DockPanelWithToolbar, IDisposable
         showStackedByParameterDepth.BindTo(propertiesTimelinesView.StackedByParameterDepth);
         ToolBar.Items.Add(showStackedByParameterDepth);
 
+        var showStackedByParameterDepthOnlyChanged = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.SortAlphaUp), ToolTip = "Show only changing values" };
+        showStackedByParameterDepthOnlyChanged.BindTo(propertiesTimelinesView.StackedByParameterDepthOnlyChanges);
+        ToolBar.Items.Add(showStackedByParameterDepthOnlyChanged);
+
         var cb = new CheckComboBoxControl("Parameters");
         if (mainwindow.Replay != null) cb.SetItems(mainwindow.Replay.ParameterCategories, true);
         mainwindow.ReplayChanged += (replay) => cb.SetItems(replay.ParameterCategories, true);
