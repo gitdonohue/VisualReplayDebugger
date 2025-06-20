@@ -59,4 +59,6 @@ public class SearchContext
             return text.Contains(SearchString);
         }
     }
+
+    public bool Filter(string text) => !Empty && !Match(text);
 }

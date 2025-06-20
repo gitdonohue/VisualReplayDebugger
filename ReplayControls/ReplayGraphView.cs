@@ -45,6 +45,8 @@ public class ReplayGraphView : UserControl, IDisposable
     public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
     public WatchedBool Autoscale { get; } = new(false);
 
+    public WatchedVariable<string> FilterText { get; } = new();
+
     private static readonly System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
     private static readonly Typeface TextTypeface = new("Arial");
 
@@ -70,6 +72,7 @@ public class ReplayGraphView : UserControl, IDisposable
         GraphsStackedByParameter.Changed += RequestFullRedraw;
         GraphsStackedByParameterDepth.Changed += RequestFullRedraw;
         Autoscale.Changed += RequestFullRedraw;
+        FilterText.Changed += RequestFullRedraw;
 
         MouseHandler = new(TimelineWindow, this, windowMode:false);
         this.MouseDown += MouseHandler.OnMouseDown;
@@ -327,6 +330,7 @@ public class ReplayGraphView : UserControl, IDisposable
         double cursorXPos = r * Bounds.Width;
         dc.DrawLine(CursorPen, new System.Windows.Point(cursorXPos, 0), new System.Windows.Point(cursorXPos, ActualHeight));
 
+        var filter = new SearchContext(FilterText.Value);
         foreach ((Entity entity, Rect rectToFillForEntity, int entityIndex) in EnumerateEntityDrawRegions(SelectedEntities, Bounds))
         {
             // Entity labels
@@ -340,6 +344,8 @@ public class ReplayGraphView : UserControl, IDisposable
             bool inRange = replay.GetEntityLifeTime(entity).InRange(cursorFrame);
             foreach ((string streamlabel, var dataPoints, int entryNum, Rect rectToFillForParameter) in EnumerateParameterDrawRegions(entity, rectToFillForEntity))
             {
+                if (filter.Filter(streamlabel)) continue;
+
                 // Draw label at cursor pos
                 if (inRange && cursorTime >= TimelineWindow.Start && cursorTime <= TimelineWindow.End)
                 {
@@ -393,17 +399,22 @@ public class ReplayGraphView : UserControl, IDisposable
     {
         if (ValueTables.TryGetValue(entity, out var entityData))
         {
+            var filter = new SearchContext(FilterText.Value);
+            var filteredEntityData = entityData.Where(x => !filter.Filter(x.Key)).ToList();
+
+            var keys = filteredEntityData.Select(x => x.Key);
+
             int entryNum = -1;
-            int entryCount = entityData.Keys.Count;
+            int entryCount = keys.Count();
 
             int maxDepth = 0;
             if (GraphsStackedByParameterDepth)
             {
-                var keyTokens = entityData.Keys.Select(k => k.Split(SplitSeparators).Count() - 1);
+                var keyTokens = keys.Select(k => k.Split(SplitSeparators).Count() - 1);
                 if (keyTokens.Any()) maxDepth = keyTokens.Max();
             }
 
-            foreach (var datastream in entityData)
+            foreach (var datastream in filteredEntityData)
             {
                 ++entryNum;
 

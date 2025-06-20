@@ -38,6 +38,13 @@ class GraphsPanel : DockPanelWithToolbar, IDisposable
         autoScale.BindTo(graphView.Autoscale);
         ToolBar.Items.Add(autoScale);
 
+        var filterLabel = new Label() { Content = IconProvider.GetIcon(FontAwesomeIcon.Filter) };
+        ToolBar.Items.Add(filterLabel);
+
+        var filtertext = new TextBox() { Width = 150 };
+        filtertext.BindTo(graphView.FilterText);
+        ToolBar.Items.Add(filtertext);
+
         ToolBar.Items.Add(new Separator());
 
         var lockEntitySelection = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Lock), ToolTip = "Lock selection" };
