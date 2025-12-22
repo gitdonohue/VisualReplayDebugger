@@ -1,14 +1,12 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
-using HelixToolkit.Wpf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using HelixToolkit.Geometry;
+
 using System.Windows;
-using System.Windows.Media.Media3D;
+using VisualReplayDebugger.Utils;
+using Point3D = System.Windows.Media.Media3D.Point3D;
+using Vector3D = System.Windows.Media.Media3D.Vector3D;
 
 namespace HelixToolkit.Wpf
 {
@@ -50,14 +48,14 @@ namespace HelixToolkit.Wpf
         public bool SimilarTo(Point3D p1, Point3D p2, double radius) => SimilarTo(p2-p1, radius);
         public bool SimilarTo(Vector3D h, double radius) => (h - (End - Center)).Length < float.Epsilon;
 
-        protected override MeshGeometry3D Tessellate()
+        protected override System.Windows.Media.Media3D.MeshGeometry3D Tessellate()
         {
             // TODO: make an actual capsule (vs 2 spheres and a cylinder)
             var builder = new MeshBuilder(true, true);
-            builder.AddSphere(this.Center, this.Radius, this.ThetaDiv, this.PhiDiv);
-            builder.AddCylinder(this.Center, this.End, this.Radius, this.ThetaDiv, cap1: false, cap2: false);
-            builder.AddSphere(this.End, this.Radius, this.ThetaDiv, this.PhiDiv);
-            return builder.ToMesh();
+            builder.AddSphere(this.Center.ToVector3(), (float)this.Radius, this.ThetaDiv, this.PhiDiv);
+            builder.AddCylinder(this.Center.ToVector3(), this.End.ToVector3(), (float)this.Radius, this.ThetaDiv, cap1: false, cap2: false);
+            builder.AddSphere(this.End.ToVector3(), (float)this.Radius, this.ThetaDiv, this.PhiDiv);
+            return builder.ToMesh().ConvertToWndMeshGeometry3D();
         }
     }
 }

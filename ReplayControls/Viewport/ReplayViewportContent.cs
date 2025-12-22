@@ -362,7 +362,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
 #else
                     Transform3D modelTransform = Transform3D.Identity;
 #endif
-                    ModelVisual3D geom = null;
+                    ModelVisual3D? geom = null;
                     if (creationDrawCommand.type == EntityDrawCommandType.Line)
                     {
                         // Lines will be drawn in overlay
@@ -653,11 +653,13 @@ public class ReplayViewportContent // TODO: Make IDisposable
             CameraIndicator.Transform = xform;
 
             IsCameraBeingModified = true;
-            var cam = (Viewport3D.Camera as PerspectiveCamera);
-            cam.FieldOfView = 60;
-            cam.Position = xform.Transform(new Point3D());
-            cam.UpDirection = Constants.UP;
-            cam.LookDirection = xform.Transform(Constants.FRONT);
+            if (Viewport3D.Camera is PerspectiveCamera cam)
+            {
+                cam.FieldOfView = 60;
+                cam.Position = xform.Transform(new Point3D());
+                cam.UpDirection = Constants.UP;
+                cam.LookDirection = xform.Transform(Constants.FRONT);
+            }
             IsCameraBeingModified = false;
         }
 
@@ -675,7 +677,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             Vector3D avgPos = new();
             foreach (var entity in EntitySelection.SelectionSet)
             {
-                avgPos += Replay.GetEntityPosition(entity,frame).ToPoint().ToVector3D();
+                avgPos += Replay.GetEntityPosition(entity,frame).ToPoint().ToWndVector3D();
             }
             avgPos /= EntitySelection.SelectionSet.Count;
 
@@ -685,7 +687,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             // TODO: Move the camera on the plane defined by the up vector so that it aligns with the point
             //IsCameraBeingModified = false;
 
-            FocusAtRequested?.Invoke(avgPos.ToPoint3D());
+            FocusAtRequested?.Invoke(avgPos.ToWndPoint3D());
         }
     }
 }

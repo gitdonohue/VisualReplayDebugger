@@ -14,16 +14,10 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.Media3D;
-using System.Windows.Shapes;
-using System.Windows.Input;
 using System.Windows.Markup; // IAddChild, ContentPropertyAttribute
 
 namespace _3DTools
@@ -53,7 +47,7 @@ namespace _3DTools
         /// The content/child of the Viewport3DDecorator.  A Viewport3DDecorator only has one
         /// child and this child must be either another Viewport3DDecorator or a Viewport3D.
         /// </summary>
-        public UIElement Content
+        public UIElement? Content
         {
             get
             {
@@ -71,8 +65,8 @@ namespace _3DTools
                 // check to make sure we're attempting to set something new
                 if (_content != value)
                 {
-                    UIElement oldContent = _content;
-                    UIElement newContent = value;                    
+                    UIElement? oldContent = _content;
+                    UIElement? newContent = value;
                     
                     // remove the previous child
                     RemoveVisualChild(oldContent);
@@ -152,7 +146,7 @@ namespace _3DTools
         /// </summary>
         /// <param name="oldContent">The old value of the Content property</param>
         /// <param name="newContent">The new value of the Content property</param>
-        protected virtual void OnViewport3DDecoratorContentChange(UIElement oldContent, UIElement newContent)
+        protected virtual void OnViewport3DDecoratorContentChange(UIElement? oldContent, UIElement? newContent)
         {
         }
 
@@ -431,9 +425,9 @@ namespace _3DTools
         //  Private data
         //
         //---------------------------------------------------------        
-        private UIElementCollection _preViewportChildren;
-        private UIElementCollection _postViewportChildren;
-        private UIElement _content;
+        private UIElementCollection? _preViewportChildren;
+        private UIElementCollection? _postViewportChildren;
+        private UIElement? _content;
     }
 }
 

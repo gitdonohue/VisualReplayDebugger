@@ -14,17 +14,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Security;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Documents;
 using System.Collections;
+
+using Point3D = System.Windows.Media.Media3D.Point3D;
 
 namespace _3DTools
 {
@@ -1213,14 +1210,14 @@ namespace _3DTools
 
         // helper functions to cache the last created visual edges and also to tell
         // if we need to recompute these values, or can use the cache
-        private Point[] _lastVisCorners = null;
-        private List<HitTestEdge> _lastEdges = null;
-        private Matrix3D _lastMatrix3D;
+        private Point[]? _lastVisCorners = null;
+        private List<HitTestEdge>? _lastEdges = null;
+        private Matrix3D? _lastMatrix3D;
 
         // the actual visual that is created
-        private UIElement _internalVisual;
+        private UIElement? _internalVisual;
 
-        private VisualBrush _visualBrush;
+        private VisualBrush? _visualBrush;
     }
 
     /// <summary>
@@ -1241,7 +1238,7 @@ namespace _3DTools
         /// <summary>
         /// The content/child of the VisualDecorator.
         /// </summary>
-        public Visual Content
+        public Visual? Content
         {
             get
             {
@@ -1253,8 +1250,8 @@ namespace _3DTools
                 // check to make sure we're attempting to set something new
                 if (_visual != value)
                 {
-                    Visual oldVisual = _visual;
-                    Visual newVisual = value;
+                    Visual? oldVisual = _visual;
+                    Visual? newVisual = value;
 
                     // remove the previous child
                     RemoveVisualChild(oldVisual);
@@ -1284,7 +1281,7 @@ namespace _3DTools
         /// <summary>
         /// Returns the child at the specified index.
         /// </summary>
-        protected override Visual GetVisualChild(int index)
+        protected override Visual? GetVisualChild(int index)
         {
             if (index == 0 && Content != null) return _visual;
 
@@ -1310,6 +1307,6 @@ namespace _3DTools
         }
 
         // the visual being referenced
-        private Visual _visual;
+        private Visual? _visual;
     }
 }

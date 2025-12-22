@@ -13,7 +13,7 @@ namespace VisualReplayDebugger;
 
 class EntityPropertiesControl : TextBox
 {
-    public WatchedVariable<string> FilterText { get; } = new();
+    public WatchedVariable<string> FilterText { get; } = new("");
     public WatchedBool EntitySelectionLocked { get; } = new(false);
     private readonly SelectionGroup<Entity> EntitySelection;
     private List<Entity> SelectedEntities { get; } = new();

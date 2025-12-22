@@ -27,7 +27,7 @@ public enum Color { AliceBlue, PaleGoldenrod, Orchid, OrangeRed, Orange, OliveDr
 
 public interface IReplayWriter : IDisposable
 {
-    void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string> staticParameters = null);
+    void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string>? staticParameters = null);
     void UnRegisterEntity(object obj);
     void SetPosition(object obj, Point pos);
     void SetTransform(object obj, Transform xform);
@@ -69,7 +69,7 @@ public class ReplayCaptureWriter : IReplayWriter, IDisposable
         ++FrameCounter;
     }
 
-    public void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string> staticParameters = null)
+    public void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string>? staticParameters = null)
     {
         if (!EntityMapping.TryGetValue(obj, out Entity entity))
         {
@@ -391,10 +391,10 @@ public class Entity
 {
     public int Id;
     public int ParentId = -1;
-    public string Name;
-    public string Path;
-    public string TypeName;
-    public string CategoryName;
+    public string Name = "";
+    public string Path = "";
+    public string TypeName = "";
+    public string CategoryName = "";
     public Transform InitialTransform;
     public Dictionary<string, string> StaticParameters = new();
     public int CreationFrame;

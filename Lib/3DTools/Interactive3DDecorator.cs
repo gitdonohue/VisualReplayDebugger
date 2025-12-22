@@ -16,14 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
-using System.Windows.Shapes;
 using System.Windows.Input;
-using System.Windows.Markup; // IAddChild, ContentPropertyAttribute
 
 namespace _3DTools
 {
@@ -240,7 +236,8 @@ namespace _3DTools
                 }
                 
                 // update the location if we have positioning information
-                needMouseResync = UpdateHiddenVisual(_closestIntersectInfo,
+                if (_closestIntersectInfo != null)
+                    needMouseResync = UpdateHiddenVisual(_closestIntersectInfo,
                                                      mouseposition,
                                                      scaleHiddenVisual);                                                         
             }
@@ -614,7 +611,7 @@ namespace _3DTools
         /// <returns></returns>
         private HitTestResultBehavior HTResult(System.Windows.Media.HitTestResult rawresult)
         {
-            RayHitTestResult rayResult = rawresult as RayHitTestResult;
+            RayHitTestResult? rayResult = rawresult as RayHitTestResult;
             HitTestResultBehavior hitTestResultBehavior = HitTestResultBehavior.Continue;
 
             // since we're hit testing a viewport3D we should be getting the ray hit test result back
@@ -639,10 +636,10 @@ namespace _3DTools
         /// </returns>
         private ClosestIntersectionInfo GetIntersectionInfo(RayHitTestResult rayHitResult)
         {
-            ClosestIntersectionInfo isectInfo = null;
+            ClosestIntersectionInfo? isectInfo = null;
 
             // try to cast to a RaymeshGeometry3DHitTestResult
-            RayMeshGeometry3DHitTestResult rayMeshResult = rayHitResult as RayMeshGeometry3DHitTestResult;
+            RayMeshGeometry3DHitTestResult? rayMeshResult = rayHitResult as RayMeshGeometry3DHitTestResult;
             if (rayMeshResult != null)
             {
                 // see if we hit an InteractiveVisual3D
@@ -869,8 +866,8 @@ namespace _3DTools
         private double _offsetY;                 // that hit testing will work on the hidden visual    
         private double _scale;
 
-        private ClosestIntersectionInfo _closestIntersectInfo;
-        private ClosestIntersectionInfo _lastValidClosestIntersectInfo = null;
+        private ClosestIntersectionInfo? _closestIntersectInfo = null;
+        private ClosestIntersectionInfo? _lastValidClosestIntersectInfo = null;
 
         private DebugEdgesAdorner _DEBUGadorner = null;
 

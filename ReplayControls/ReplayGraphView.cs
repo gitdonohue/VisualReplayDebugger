@@ -45,7 +45,7 @@ public class ReplayGraphView : UserControl, IDisposable
     public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
     public WatchedBool Autoscale { get; } = new(false);
 
-    public WatchedVariable<string> FilterText { get; } = new();
+    public WatchedVariable<string> FilterText { get; } = new("");
 
     private static readonly System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
     private static readonly Typeface TextTypeface = new("Arial");

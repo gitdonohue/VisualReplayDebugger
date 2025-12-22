@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PathTree
 {
@@ -18,8 +16,8 @@ namespace PathTree
     {
         class Node
         {
-            public PathKeyType PathKey { get; internal set; }
-            public ValueType Val { get; internal set; }
+            public PathKeyType? PathKey { get; internal set; }
+            public ValueType? Val { get; internal set; }
             public List<Node> Children { get; internal set; } = new List<Node>();
         }
 

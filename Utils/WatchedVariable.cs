@@ -20,39 +20,15 @@ namespace WatchedVariable
     [System.Diagnostics.DebuggerDisplay("{internal_value}")]
     public class WatchedVariable<T> : IBindable<WatchedVariable<T>>
     {
-        public event Action Changed;
+        public event Action? Changed;
 
         private T internal_value;
-        private Action<T> OnValueChanged { get; set; }
-        private Action OnChanged { get; set; }
+        private Action<T>? OnValueChanged { get; set; }
+        private Action? OnChanged { get; set; }
 
-        public WatchedVariable(T initialValue = default(T))
+        public WatchedVariable(T initialValue)
         {
             internal_value = initialValue;
-        }
-
-        public WatchedVariable(Action<T> onChanged)
-        {
-            internal_value = default(T);
-            OnValueChanged = onChanged;
-        }
-
-        public WatchedVariable(Action onChanged)
-        {
-            internal_value = default(T);
-            OnChanged = onChanged;
-        }
-
-        public WatchedVariable(T initialValue, Action<T> onChanged)
-        {
-            internal_value = initialValue;
-            OnValueChanged = onChanged;
-        }
-
-        public WatchedVariable(T initialValue, Action onChanged)
-        {
-            internal_value = initialValue;
-            OnChanged = onChanged;
         }
 
         public void Set(T value)

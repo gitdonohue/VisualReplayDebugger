@@ -20,7 +20,7 @@ namespace VisualReplayDebugger
 
     class ReplayEntitiesTimelinesView : ListView
     {
-        public WatchedVariable<string> FilterText { get; } = new();
+        public WatchedVariable<string> FilterText { get; } = new("");
         public ITimelineWindow TimelineWindow { get; private set; }
         public SelectionGroup<string> TimelineEntityCategoryFilter { get; private set; } = new();
         public WatchedBool ShowStarredEntitiesOnly { get; } = new(false);

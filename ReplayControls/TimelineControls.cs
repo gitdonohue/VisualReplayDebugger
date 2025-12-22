@@ -244,7 +244,7 @@ namespace TimelineControls
         private DispatcherTimer Timer;
         private double CursorStartTime;
 
-        public event Action Stopped;
+        public event Action? Stopped;
 
         public TimelineController(ITimeline timeline)
         {
@@ -283,7 +283,7 @@ namespace TimelineControls
             Timeline.Cursor = Timeline.Start;
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void Timer_Tick(object? sender, EventArgs e)
         {
             double secondsElapsed = Stopwatch.ElapsedMilliseconds / 1000.0;
 

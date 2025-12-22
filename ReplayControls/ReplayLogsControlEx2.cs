@@ -22,8 +22,8 @@ namespace VisualReplayDebugger;
 // Much faster than than AnavlonEdit or VirtualizingStackPanel, simpler color management and overlay.
 public class ReplayLogsControlEx2 : UserControl, IDisposable
 {
-    public WatchedVariable<string> FilterText { get; } = new();
-    public WatchedVariable<string> SearchText { get; } = new();
+    public WatchedVariable<string> FilterText { get; } = new("");
+    public WatchedVariable<string> SearchText { get; } = new("");
     public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
     public WatchedBool EntitySelectionLocked { get; } = new(false);
 

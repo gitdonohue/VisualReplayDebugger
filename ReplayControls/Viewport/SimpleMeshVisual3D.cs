@@ -1,14 +1,12 @@
 ﻿// (c) 2021 Charles Donohue
 // This code is licensed under MIT license (see LICENSE file for details)
 
+using HelixToolkit.Geometry;
 using HelixToolkit.Wpf;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media.Media3D;
+using VisualReplayDebugger.Utils;
+using Point3D = System.Windows.Media.Media3D.Point3D;
 
 namespace HelixToolkit.Wpf
 {
@@ -22,14 +20,14 @@ namespace HelixToolkit.Wpf
             UpdateModel();
         }
 
-        protected override MeshGeometry3D Tessellate()
+        protected override System.Windows.Media.Media3D.MeshGeometry3D Tessellate()
         {
             var builder = new MeshBuilder(false, false);
             if (_verts != null)
             {
-                builder.Append(_verts, Enumerable.Range(0, _verts.Length).ToArray());
+                //builder.Append(_verts, Enumerable.Range(0, _verts.Length).ToArray());
             }
-            return builder.ToMesh();
+            return builder.ToMesh().ConvertToWndMeshGeometry3D();
         }
     }
 }

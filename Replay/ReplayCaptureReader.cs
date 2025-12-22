@@ -121,7 +121,9 @@ public class ReplayCaptureReader
         public (int frame, T val) this[int index] => (internal_frames[index],internal_values[index]);
     }
 
-    public class ForDict<K, V> : Dictionary<K, V> where V : class, new()
+    public class ForDict<K, V> : Dictionary<K, V> 
+        where V : class, new()
+        where K : notnull
     {
         public V For(K key)
         {
@@ -136,6 +138,7 @@ public class ReplayCaptureReader
     }
 
     public class FrameStampedListDict<T,V> : ForDict<T, FrameStampedList<V>>
+        where T : notnull
     {
         public void Bake()
         {
