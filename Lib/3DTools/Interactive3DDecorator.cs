@@ -446,7 +446,7 @@ namespace _3DTools
         /// <param name="mousePos">The mouse location</param>
         /// <param name="scaleHiddenVisual">Whether to scale the visual in addition to moving it</param>
         /// <returns></returns>
-        private bool UpdateHiddenVisual(ClosestIntersectionInfo isectInfo, Point mousePos, bool scaleHiddenVisual)
+        private bool UpdateHiddenVisual(ClosestIntersectionInfo? isectInfo, Point mousePos, bool scaleHiddenVisual)
         {
             bool needsMouseReSync = false;
             double newOffsetX, newOffsetY;
@@ -634,7 +634,7 @@ namespace _3DTools
         /// Returns ClosestIntersectionInfo if an InteractiveModelVisual3D is hit, otherwise
         /// returns null.
         /// </returns>
-        private ClosestIntersectionInfo GetIntersectionInfo(RayHitTestResult rayHitResult)
+        private ClosestIntersectionInfo? GetIntersectionInfo(RayHitTestResult rayHitResult)
         {
             ClosestIntersectionInfo? isectInfo = null;
 
@@ -643,13 +643,12 @@ namespace _3DTools
             if (rayMeshResult != null)
             {
                 // see if we hit an InteractiveVisual3D
-                InteractiveVisual3D imv3D = rayMeshResult.VisualHit as InteractiveVisual3D;
+                InteractiveVisual3D? imv3D = rayMeshResult.VisualHit as InteractiveVisual3D;
                 if (imv3D != null)
                 {
                     // we can now extract the mesh and visual for the object we hit
                     MeshGeometry3D geom = rayMeshResult.MeshHit;
-                    UIElement uiElem = imv3D.InternalVisual;
-                
+                    UIElement? uiElem = imv3D.InternalVisual;
                     if (uiElem != null)
                     {
                         // pull the barycentric coordinates of the intersection point
@@ -869,7 +868,7 @@ namespace _3DTools
         private ClosestIntersectionInfo? _closestIntersectInfo = null;
         private ClosestIntersectionInfo? _lastValidClosestIntersectInfo = null;
 
-        private DebugEdgesAdorner _DEBUGadorner = null;
+        private DebugEdgesAdorner? _DEBUGadorner = null;
 
         bool _isInPosition = false;             // optimization so that things aren't rechecked after they are moved 
 

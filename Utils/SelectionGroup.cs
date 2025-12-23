@@ -10,7 +10,7 @@ public class SelectionGroup<T>
 {
     public HashSet<T> SelectionSet { get; private set; } = new HashSet<T>();
 
-    public event Action Changed;
+    public event Action? Changed;
 
     public void Add(T element)
     {

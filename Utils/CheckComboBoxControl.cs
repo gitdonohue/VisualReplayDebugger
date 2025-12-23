@@ -11,10 +11,10 @@ namespace VisualReplayDebugger;
 
 public class CheckComboBoxControl : ComboBox
 {
-    public IEnumerable<string> SelectedItems => CheckBoxItems.Where(x=> x.IsChecked.Value).Select(x=>x.Content as string);
-    public IEnumerable<string> UnselectedItems => CheckBoxItems.Where(x=> !x.IsChecked.Value).Select(x=>x.Content as string);
+    public IEnumerable<string> SelectedItems => CheckBoxItems.Where(x=> x.IsChecked == true).Select(x=>x.Content as string ?? string.Empty);
+    public IEnumerable<string> UnselectedItems => CheckBoxItems.Where(x=> x.IsChecked != true).Select(x=>x.Content as string ?? string.Empty);
 
-    public event Action Changed;
+    public event Action? Changed;
 
     private IEnumerable<CheckBox> CheckBoxItems => this.Items.Cast<object>().Skip(1).Cast<CheckBox>();
 
@@ -64,7 +64,10 @@ public class CheckComboBoxControl : ComboBox
         if (this.Items.Count > 0)
         {
             var all = this.Items[0] as CheckBox;
-            all.Click -= All_Click;
+            if (all != null)
+            {
+                all.Click -= All_Click;
+            }
         }
 
         foreach (var cbi in CheckBoxItems)
@@ -76,7 +79,7 @@ public class CheckComboBoxControl : ComboBox
 
     private void All_Click(object sender, System.Windows.RoutedEventArgs e)
     {
-        bool allChecked = (sender as CheckBox).IsChecked.Value;
+        bool allChecked = (sender as CheckBox)?.IsChecked == true;
 
         foreach ( var cbi in CheckBoxItems)
         {

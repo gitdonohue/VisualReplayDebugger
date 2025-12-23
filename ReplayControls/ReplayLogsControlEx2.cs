@@ -54,7 +54,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         }
     }
 
-    record LogEntryRecord(int frame, Entity entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color);
+    record LogEntryRecord(int frame, Entity? entity, string category, string log, string logHeader, string formattedLog, ReplayCapture.Color color);
 
     private LogEntryRecord[] AllLogs = new LogEntryRecord[0];
     private LogEntryRecord[] FilteredLogs = new LogEntryRecord[0];
@@ -133,7 +133,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         return string.Join('\n',ActiveLogs.Select(x=> $"{x.logHeader} {x.formattedLog}"));
     }
 
-    private string LogHeaderFormat(int frame, Entity entity, string category, string log)
+    private string LogHeaderFormat(int frame, Entity? entity, string category, string log)
     {
         if (entity == null) return log;
         string categoryLabel = category;
@@ -147,7 +147,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         }
         return $"{Timeline.Timeline.TimeString(Replay.GetTimeForFrame(frame))} ({frame}) {categoryLabel} [{entity.Name}] -";
     }
-    private string LogFormat(int frame, Entity entity, string category, string log) => log;
+    private string LogFormat(int frame, Entity? entity, string category, string log) => log;
 
     private IEnumerable<LogEntryRecord> CollectLogs()
     {

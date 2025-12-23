@@ -127,7 +127,6 @@ public class ReplayCaptureReader
     {
         public V For(K key)
         {
-            if (key == null) return null;
             if (!TryGetValue(key, out V val))
             {
                 val = new V();
@@ -211,7 +210,7 @@ public class ReplayCaptureReader
 
     public double TotalTime => FrameTimes[FrameTimes.Length - 1];
 
-    public FrameStampedList<Transform> GetEntityTransforms(Entity entity)
+    public FrameStampedList<Transform>? GetEntityTransforms(Entity entity)
     {
         return EntitySetTransforms.TryGetValue(entity, out var transforms) ? transforms : null;
     }
@@ -265,7 +264,7 @@ public class ReplayCaptureReader
 
     private void AddToDynamicPropertiesTable(Entity entity, int frame, string param, string val)
     {
-        EntityDynamicParamsCombined.For(entity)?.AddForBake(frame, (param, val));
+        EntityDynamicParamsCombined.For(entity).AddForBake(frame, (param, val));
 
         EntityDynamicParamsNames.Add(param);
 
@@ -323,7 +322,10 @@ public class ReplayCaptureReader
     public HashSet<Color> LogColors { get; private set; } = new();
 
     public HashSet<string> DrawCategories { get; private set; } = new();
-    public IEnumerable<string> GetDrawCategories() => DrawCommands.Where(x=>!x.val.IsCreationDraw).Select(x => x.val.category).Distinct();
+    public IEnumerable<string> GetDrawCategories() => DrawCommands
+                                                        .Where(x=>!x.val.IsCreationDraw && !string.IsNullOrEmpty(x.val.category))
+                                                        .Select(x => x.val.category!)
+                                                        .Distinct();
     public HashSet<Color> DrawColors { get; private set; } = new();
 
     public float[] FrameTimes { get; private set; } = new float[1];
@@ -640,9 +642,12 @@ public class ReplayCaptureReader
     private void AddDrawCommand(int frame, EntityDrawCommand dc)
     {
         DrawColors.Add(dc.color);
-        if (!dc.IsCreationDraw) DrawCategories.Add(dc.category);
+        if (!dc.IsCreationDraw && !string.IsNullOrEmpty(dc.category)) DrawCategories.Add(dc.category);
         DrawCommands.AddForBake(frame, dc);
-        dc.entity.HasDraws = true;
+        if (dc.entity != null)
+        {
+            dc.entity.HasDraws = true;
+        }
     }
 }
 
@@ -712,9 +717,12 @@ public class EntityGraphNode
         // Nodes can be added before their parents, so we need to reparent
         foreach (var childNode in this.FindNodeWithParent(e.Id))
         {
-            childNode.Parent.Children.Remove(childNode);
+            if (childNode.Parent != null)
+            {
+                childNode.Parent.Children.Remove(childNode);
+            }
             childNode.Parent = node;
-            childNode.Parent.Children.Add(childNode);
+            node.Children.Add(childNode);
         }
 
     }

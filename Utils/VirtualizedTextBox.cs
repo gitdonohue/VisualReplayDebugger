@@ -10,7 +10,7 @@ public class VirtualizedTextBox : VirtualizingStackPanel
 {
     public record TextEntry
     {
-        public string Text;
+        public string? Text;
         public int Index;
     }
 

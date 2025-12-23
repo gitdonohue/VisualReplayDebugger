@@ -7,9 +7,9 @@ namespace VisualReplayDebugger;
 
 public class SearchContext
 {
-    string SearchString;
+    string SearchString = string.Empty;
     bool CaseInsensitive;
-    Regex Rx;
+    Regex? Rx;
     bool EmptySearchMatch;
     bool EmptyInputMatch;
 
@@ -36,7 +36,7 @@ public class SearchContext
             CaseInsensitive = caseInsensitive;
             if (CaseInsensitive)
             {
-                SearchString = SearchString?.ToLower();
+                SearchString = SearchString.ToLower();
             }
         }
     }

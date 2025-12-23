@@ -14,7 +14,7 @@ public class SelectionSpans
 
     public IEnumerable<int> AllIndexes => spans.SelectMany(x=>Enumerable.Range(x.start,x.stop-x.start+1));
     
-    public event Action Changed;
+    public event Action? Changed;
     
     public void Clear() 
     { 

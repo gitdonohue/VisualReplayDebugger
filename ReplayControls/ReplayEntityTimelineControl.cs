@@ -119,7 +119,7 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
 
 class EntityTimelineViewWithLabel : DockPanel, IDisposable
 {
-    public ReplayEntityTimelineControl EntityTimelineView { get; private set; }
+    public ReplayEntityTimelineControl? EntityTimelineView { get; private set; }
     public Entity Entity { get; private set; }
 
     readonly ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;

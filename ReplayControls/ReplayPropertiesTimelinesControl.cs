@@ -238,7 +238,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         int index = 0;
         foreach (var entry in entries)
         {
-            string entryValueAtDepth = entry.SplitValues.ElementAtOrDefault(depth);
+            string entryValueAtDepth = entry.SplitValues.ElementAtOrDefault(depth) ?? string.Empty;
             string entryFullValueAtDepth = string.Join('.', entry.SplitValues.Take(depth+1));
 
             if (entry.time < start)
@@ -301,7 +301,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
         public Entity entity;
         public string parameter;
-        public List<DrawBlock> drawBlocks;
+        public List<DrawBlock>? drawBlocks;
         public Rect bounds;
         public Rect startBounds;
         public Rect endBounds;
@@ -309,10 +309,10 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 
     class DrawBlock
     {
-        public DrawChannel channel;
+        public DrawChannel? channel;
         public Rect bounds;
-        public string val;
-        public string fullval;
+        public string val = string.Empty;
+        public string fullval = string.Empty;
         public double startTime;
         public double endTime;
 
@@ -505,8 +505,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         base.OnRender(dc);
     }
 
-    private DrawBlock _blockUnderMouse;
-    private DrawBlock BlockUnderMouse
+    private DrawBlock? _blockUnderMouse;
+    private DrawBlock? BlockUnderMouse
     {
         get => _blockUnderMouse;
         set
@@ -519,7 +519,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         }
     }
 
-    private DrawBlock FindBlockAtPos(System.Windows.Point pos)
+    private DrawBlock? FindBlockAtPos(System.Windows.Point pos)
     {
         if (DrawChannels.Any())
         {
@@ -545,7 +545,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
         if (BlockUnderMouse != null)
         {
-            string txt = $"{BlockUnderMouse.channel.entity.Name}\n{BlockUnderMouse.channel.parameter} : {(BlockUnderMouse.RawValue)}";
+            string txt = $"{BlockUnderMouse.channel?.entity.Name}\n{BlockUnderMouse.channel?.parameter} : {(BlockUnderMouse.RawValue)}";
             SetTooltipText(txt);
         }
     }
@@ -576,7 +576,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
         ZoomOnBlock(BlockUnderMouse);
     }
 
-    private void ZoomOnBlock(DrawBlock block)
+    private void ZoomOnBlock(DrawBlock? block)
     {
         if (block != null)
         {

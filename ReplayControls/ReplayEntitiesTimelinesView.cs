@@ -47,7 +47,8 @@ namespace VisualReplayDebugger
         public class TimelineMouseControlHandlerEx : ReplayControls.TimelineMouseControlHandler
         {
             private readonly ReplayEntitiesTimelinesView ReplayEntitiesTimelinesView;
-            public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView, bool slideWindowWhileScurbbing) : base(timelineWindow,null, slideWindowWhileScurbbing: slideWindowWhileScurbbing) 
+            public TimelineMouseControlHandlerEx(ITimelineWindow timelineWindow, ReplayEntitiesTimelinesView replayEntitiesTimelinesView, bool slideWindowWhileScurbbing) 
+                : base(timelineWindow, null, slideWindowWhileScurbbing: slideWindowWhileScurbbing) 
             {
                 ReplayEntitiesTimelinesView = replayEntitiesTimelinesView;
             }

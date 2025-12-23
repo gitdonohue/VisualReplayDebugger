@@ -189,7 +189,7 @@ internal class BinaryReplayWriter
 {
     public static System.Text.Encoding StringEncoding => System.Text.Encoding.ASCII;
 
-    BinaryWriterEx _writer;
+    BinaryWriterEx? _writer;
 
     public BinaryReplayWriter(Stream stream)
     {

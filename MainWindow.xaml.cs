@@ -249,7 +249,7 @@ public partial class MainWindow : Window
         TimeControlsPanel.Children.Add(step_bwd);
 
         var playButton = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Play), Width = h, Height = h };
-        playButton.Click += (o, e) => { Play.Set(playButton.IsChecked.Value); };
+        playButton.Click += (o, e) => { Play.Set(playButton.IsChecked == true); };
         Play.Changed += () => { playButton.IsChecked = Play; playButton.Content = IconProvider.GetIcon(Play ? FontAwesomeIcon.Stop : FontAwesomeIcon.Play); };
         TimeControlsPanel.Children.Add(playButton);
 
@@ -296,7 +296,11 @@ public partial class MainWindow : Window
                 ReplayChanged?.Invoke(replay);
 
                 EntitySelection.Clear();
-                EntitySelection.Add(Replay.Entities.Values.FirstOrDefault());
+                var firstEntity = Replay.Entities.Values.FirstOrDefault();
+                if (firstEntity != null)
+                {
+                    EntitySelection.Add(firstEntity);
+                }
                 HiddenEntities.Clear();
 
                 this.TimelineWindow.Fill();

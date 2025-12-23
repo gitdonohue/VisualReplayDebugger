@@ -53,7 +53,7 @@ namespace _3DTools
                 throw new ArgumentException(String.Format("MeshConverter must target a {0}", typeof(TargetType).Name));
             }
 
-            MeshGeometry3D mesh = value as MeshGeometry3D;
+            MeshGeometry3D? mesh = value as MeshGeometry3D;
             if (mesh == null)
             {
                 throw new ArgumentException("MeshConverter can only convert from a MeshGeometry3D");

@@ -35,8 +35,8 @@ namespace TimelineControls
             }
         }
 
-        private ITimelineWindow timelineWindow;
-        public ITimelineWindow TimelineWindow
+        private ITimelineWindow? timelineWindow;
+        public ITimelineWindow? TimelineWindow
         {
             get => timelineWindow;
             set
@@ -77,10 +77,10 @@ namespace TimelineControls
         }
 
         #region drawing
-        Brush BackgroundBrush;
-        Brush SelectionWindowBrush;
-        Pen TimelinePen;
-        Pen CursorPen;
+        Brush? BackgroundBrush;
+        Brush? SelectionWindowBrush;
+        Pen? TimelinePen;
+        Pen? CursorPen;
 
         protected override void OnRender(DrawingContext dc)
         {
@@ -120,8 +120,8 @@ namespace TimelineControls
 
     public class TimelineWindowControl : UserControl
     {
-        private ITimelineWindow timelineWindow;
-        public ITimelineWindow TimelineWindow
+        private ITimelineWindow? timelineWindow;
+        public ITimelineWindow? TimelineWindow
         {
             get => timelineWindow;
             set
@@ -176,9 +176,9 @@ namespace TimelineControls
         double CursorRatio => TimelineWindow != null ? ((TimelineWindow.Range > 0) ? ((CursorUnitPos - TimelineWindow.Start) / TimelineWindow.Range) : 0) : 0;
 
         #region drawing
-        Brush BackgroundBrush;
-        Pen TimelinePen;
-        Pen CursorPen;
+        Brush? BackgroundBrush;
+        Pen? TimelinePen;
+        Pen? CursorPen;
 
         protected override void OnRender(DrawingContext dc)
         {

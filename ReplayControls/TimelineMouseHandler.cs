@@ -23,13 +23,13 @@ public class TimelineMouseControlHandler
     //Point MouseInitialPos;
     //double MouseLastPosX;
 
-    private System.Windows.Controls.UserControl control;
+    private System.Windows.Controls.UserControl? control;
     private ITimelineWindow timelineWindow;
 
-    public ITimeline Timeline => timelineWindow?.Timeline;
+    public ITimeline? Timeline => timelineWindow?.Timeline;
     public ITimelineWindow TimelineWindow => timelineWindow;
 
-    public virtual double ControlWidth => control.ActualWidth;
+    public virtual double ControlWidth => control?.ActualWidth ?? 0.0;
     public virtual System.Windows.Point MousePos(System.Windows.Input.MouseEventArgs e) => e.GetPosition(control);
 
     public int SelectionMargin => 10;
@@ -37,7 +37,7 @@ public class TimelineMouseControlHandler
     private bool windowMode;
     private bool slideWindowWhileScurbbing;
 
-    public TimelineMouseControlHandler(ITimelineWindow timelineWindow, System.Windows.Controls.UserControl control, bool windowMode = true, bool slideWindowWhileScurbbing = true)
+    public TimelineMouseControlHandler(ITimelineWindow timelineWindow, System.Windows.Controls.UserControl? control, bool windowMode = true, bool slideWindowWhileScurbbing = true)
     {
         this.timelineWindow = timelineWindow;
         this.control = control;
@@ -47,9 +47,11 @@ public class TimelineMouseControlHandler
 
     private double MouseUnitPos(double controlPos)
     {
+        var timeline = Timeline;
+        if (timeline == null || ControlWidth <= 0) return 0;
         if (windowMode)
         {
-            return Timeline.Start + controlPos * Timeline.Range / ControlWidth;
+            return timeline.Start + controlPos * timeline.Range / ControlWidth;
         }
         else
         {
@@ -59,9 +61,11 @@ public class TimelineMouseControlHandler
 
     private double TimeScale(double pixels)
     {
+        var timeline = Timeline;
+        if (timeline == null || ControlWidth <= 0) return 0;
         if (windowMode)
         {
-            return pixels * Timeline.Range / ControlWidth;
+            return pixels * timeline.Range / ControlWidth;
         }
         else
         {

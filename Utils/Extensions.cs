@@ -78,51 +78,43 @@ public static class Extensions
     public static SolidColorBrush WithAlpha(this SolidColorBrush b, byte alpha) => new(b.Color.WithAlpha(alpha));
     public static SolidColorBrush WithAlpha(this SolidColorBrush b, double alpha) => b.WithAlpha((byte)(alpha * 0xFF));
 
-    public static Pen WithAlpha(this Pen pen, byte alpha) => new((pen.Brush as SolidColorBrush).WithAlpha(alpha), pen.Thickness);
+    public static Pen WithAlpha(this Pen pen, byte alpha)
+    {
+        if (pen.Brush is SolidColorBrush solidColorBrush)
+        {
+            return new Pen(solidColorBrush.WithAlpha(alpha), pen.Thickness);
+        }
+        return new Pen(pen.Brush ?? Brushes.Transparent, pen.Thickness);
+    }
     public static Pen WithAlpha(this Pen pen, double alpha) => pen.WithAlpha((byte)(alpha * 0xFF));
 
 
-    private static Dictionary<string, ReplayCapture.Color> _colorTranslationTable;
+    private static Dictionary<string, ReplayCapture.Color>? _colorTranslationTable;
     public static ReplayCapture.Color ToColor(this string colorName)
     {
-        if (_colorTranslationTable == null)
-        {
-            _colorTranslationTable = new();
-            foreach (ReplayCapture.Color replayColor in Enum.GetValues(typeof(ReplayCapture.Color)))
-            {
-                _colorTranslationTable[replayColor.ToString()] = replayColor;
-            }
-        }
+        _colorTranslationTable ??= Enum.GetValues(typeof(ReplayCapture.Color))
+                                       .Cast<ReplayCapture.Color>()
+                                       .ToDictionary(replayColor => replayColor.ToString());
         return _colorTranslationTable[colorName];
     }
 
-    private static Dictionary<ReplayCapture.Color, System.Windows.Media.Color> _colorConversionTable;
+    private static Dictionary<ReplayCapture.Color, System.Windows.Media.Color>? _colorConversionTable;
     public static System.Windows.Media.Color ToColor(this ReplayCapture.Color color)
     {
-        if (_colorConversionTable == null)
-        {
-            _colorConversionTable = new();
-            foreach (ReplayCapture.Color replayColor in Enum.GetValues(typeof(ReplayCapture.Color)))
-            {
-                var c = (System.Windows.Media.Color)ColorConverter.ConvertFromString(replayColor.ToString());
-                _colorConversionTable[replayColor] = c;
-            }
-        }
+        _colorConversionTable ??= Enum.GetValues(typeof(ReplayCapture.Color))
+                                      .Cast<ReplayCapture.Color>()
+                                      .ToDictionary(replayColor => replayColor,
+                                                    replayColor => (System.Windows.Media.Color)ColorConverter.ConvertFromString(replayColor.ToString())!);
         return _colorConversionTable[color];
     }
 
-    private static Dictionary<ReplayCapture.Color, SolidColorBrush> _brushConversionTable;
+    private static Dictionary<ReplayCapture.Color, SolidColorBrush>? _brushConversionTable;
     public static SolidColorBrush ToBrush(this ReplayCapture.Color color)
     {
-        if (_brushConversionTable == null)
-        {
-            _brushConversionTable = new();
-            foreach (ReplayCapture.Color replayColor in Enum.GetValues(typeof(ReplayCapture.Color)))
-            {
-                var c = (System.Windows.Media.Color)ColorConverter.ConvertFromString(replayColor.ToString());
-                _brushConversionTable[replayColor] = new SolidColorBrush(c);
-            }
-        }
+        _brushConversionTable ??= Enum.GetValues(typeof(ReplayCapture.Color))
+                                      .Cast<ReplayCapture.Color>()
+                                      .ToDictionary(replayColor => replayColor,
+                                                    replayColor => new SolidColorBrush((System.Windows.Media.Color)ColorConverter.ConvertFromString(replayColor.ToString())!));
         return _brushConversionTable[color];
     }
 }

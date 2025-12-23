@@ -42,24 +42,24 @@ public class ReplayViewportContent // TODO: Make IDisposable
 
     readonly Dictionary<Model3D, Entity> EntityModelsIndex = new();
 
-    Entity CameraEntity;
-    ModelVisual3D CameraIndicator;
+    Entity? CameraEntity;
+    ModelVisual3D? CameraIndicator;
 
-    public event Action<string, Point3D, int> DrawLabelRequest;
-    public event Action DrawLabelResetRequest;
+    public event Action<string, Point3D, int>? DrawLabelRequest;
+    public event Action? DrawLabelResetRequest;
 
-    public event Action<Point3D, double, System.Windows.Media.Color> DrawScreenSpaceCircleRequest;
-    public event Action DrawScreenSpaceCircleResetRequest;
+    public event Action<Point3D, double, System.Windows.Media.Color>? DrawScreenSpaceCircleRequest;
+    public event Action? DrawScreenSpaceCircleResetRequest;
 
-    public event Action<Point3D, Point3D, double, System.Windows.Media.Color> DrawWorldSpaceCircleRequest;
-    public event Action DrawWorldSpaceCircleResetRequest;
+    public event Action<Point3D, Point3D, double, System.Windows.Media.Color>? DrawWorldSpaceCircleRequest;
+    public event Action? DrawWorldSpaceCircleResetRequest;
 
-    public event Action<Point3D, Point3D, System.Windows.Media.Color> DrawLineRequest;
-    public event Action DrawLineResetRequest;
+    public event Action<Point3D, Point3D, System.Windows.Media.Color>? DrawLineRequest;
+    public event Action? DrawLineResetRequest;
 
-    public event Action CameraManuallyMoved;
+    public event Action? CameraManuallyMoved;
 
-    public event Action<Point3D> FocusAtRequested;
+    public event Action<Point3D>? FocusAtRequested;
 
     public SelectionGroup<Entity> EntitySelection { get; private set; }
     public SelectionGroup<Entity> HiddenEntities { get; private set; }
@@ -270,7 +270,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         var pos = p.ToPoint();
         var posxform = new TranslateTransform3D() { OffsetX = pos.X, OffsetY = pos.Y, OffsetZ = pos.Z };
         var scalexform = new ScaleTransform3D(radius, radius, radius);
-        sphere.Model.Transform = new MatrixTransform3D(scalexform.Value * posxform.Value);
+        sphere.Model?.Transform = new MatrixTransform3D(scalexform.Value * posxform.Value);
         sphere.Material = MaterialsForColors[color];
         sphere.Visible = true;
     }
@@ -297,7 +297,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         box.Width = dimensions.X;
         box.Height = dimensions.Y;
         box.Length = dimensions.Z;
-        box.Model.Transform = xfrom.ToTransform3D();
+        box.Model?.Transform = xfrom.ToTransform3D();
         box.Material = MaterialsForColors[color];
         box.Visible = true;
     }
@@ -335,7 +335,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             Model3DGroup.Children.Add(capsule.Content);
             capsulesCache.Add(capsule);
         }
-        capsule.Model.Transform = new TranslateTransform3D() { OffsetX = p1.X, OffsetY = p1.Y, OffsetZ = p1.Z };
+        capsule.Model?.Transform = new TranslateTransform3D() { OffsetX = p1.X, OffsetY = p1.Y, OffsetZ = p1.Z };
         capsule.Material = MaterialsForColors[color];
         capsule.Visible = true;
     }
@@ -397,7 +397,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     {
                         geom = new CapsuleVisual3D() { Start = creationDrawCommand.Pos.ToPoint(), End = creationDrawCommand.EndPoint.ToPoint(), Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
                     }
-                    else if (creationDrawCommand.type == EntityDrawCommandType.Mesh)
+                    else if (creationDrawCommand.type == EntityDrawCommandType.Mesh && creationDrawCommand.verts != null)
                     {
                         // MeshVisual3D makes the viewport lag.
                         //var meshDef = new Mesh3D(creationDrawCommand.verts.Select(x=>x.ToPoint()), Enumerable.Range(0, creationDrawCommand.verts.Length));
@@ -509,7 +509,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             {
                 if (cmd.IsCreationDraw) continue;
 
-                if (!DrawCategoryFilter.Empty && DrawCategoryFilter.Contains(cmd.category)) continue;
+                if (!DrawCategoryFilter.Empty && cmd.category != null && DrawCategoryFilter.Contains(cmd.category)) continue;
                 if (!DrawColorFilter.Empty && DrawColorFilter.Contains(cmd.color)) continue;
 
                 switch (cmd.type)
@@ -568,7 +568,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
     }
 
     private bool IsCameraBeingModified;
-    private void Camera_Changed(object sender, EventArgs e)
+    private void Camera_Changed(object? sender, EventArgs e)
     {
         if (!IsCameraBeingModified)
         {
@@ -605,7 +605,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                         if (isAlive)
                         {
 
-                            meshgeom.Model.Transform = finalTransform;
+                            meshgeom.Model?.Transform = finalTransform;
                         }
                     }
                     else if (geom is ScreenSpaceLines3D lines)
@@ -649,7 +649,8 @@ public class ReplayViewportContent // TODO: Make IDisposable
                 }
 
                 // Lines (2d overlay)
-                EntityEx ex = entity as EntityEx;
+                EntityEx? ex = entity as EntityEx;
+                if (ex == null) throw new ApplicationException("EntityEx cast failed");
                 foreach (var drawCommand in ex.CreationDrawsCommands.Where(x=>x.type == EntityDrawCommandType.Line))
                 {
                     DrawLineRequest?.Invoke(entityTransform.Transform(drawCommand.Pos.ToPoint()), entityTransform.Transform(drawCommand.EndPoint.ToPoint()), ColorConversion[drawCommand.color]);

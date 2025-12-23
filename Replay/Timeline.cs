@@ -11,7 +11,7 @@ public interface ITimeline
     double End { get; set; }
     double Cursor { get; set; }
 
-    event Action Changed;
+    event Action? Changed;
 
     double Range => End - Start;
     double CursorRatio => (Range > 0) ? ((Cursor - Start) / Range) : 0;
@@ -25,12 +25,12 @@ public interface ITimelineWindow
     double Start { get; set; }
     double End { get; set; }
 
-    double Min => Timeline?.Start ?? double.NegativeInfinity;
-    double Max => Timeline?.End ?? double.PositiveInfinity;
+    double Min => Timeline.Start;
+    double Max => Timeline.End;
     double Range => End - Start;
-    double CursorRatio => (Range > 0 && Timeline != null) ? ((Timeline.Cursor - Start) / Range) : 0;
+    double CursorRatio => (Range > 0) ? ((Timeline.Cursor - Start) / Range) : 0;
 
-    event Action Changed;
+    event Action? Changed;
 
     void ScaleWindow(double scaleFactor, double center);
     void SlideWindow(double offset);
@@ -49,7 +49,7 @@ public class Timeline : ITimeline
     public double Cursor { get => cursor; set { double pre = cursor; SetCursorNoEvent(value); if (cursor != pre) CallChanged(); } }
     double cursor;
 
-    public event Action Changed;
+    public event Action? Changed;
 
     public void SetCursorNoEvent(double t) { cursor = SafeVal(t); if (cursor < start) cursor = start; if (cursor > end) cursor = end; }
 
@@ -67,20 +67,18 @@ public class TimelineWindow : ITimelineWindow
         get => timeline;
         set
         {
+            if (value is null) throw new ArgumentNullException(nameof(value));
             if (timeline != null)
             {
                 timeline.Changed -= CallChanged;
             }
             timeline = value;
-            if (timeline != null)
-            {
-                timeline.Changed += CallChanged;
-            }
+            timeline.Changed += CallChanged;
             Clamp();
             CallChanged();
         }
     }
-    ITimeline timeline;
+    ITimeline timeline = null!;
 
     public double Start 
     { 
@@ -108,14 +106,14 @@ public class TimelineWindow : ITimelineWindow
     }
     double end = 1;
 
-    double Min => Timeline?.Start ?? double.NegativeInfinity;
-    double Max => Timeline?.End ?? double.PositiveInfinity;
+    double Min => Timeline.Start;
+    double Max => Timeline.End;
 
-    public event Action Changed;
+    public event Action? Changed;
 
     public TimelineWindow(ITimeline timeline)
     {
-        Timeline = timeline;
+        Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
         start = timeline.Start;
         end = timeline.End;
     }

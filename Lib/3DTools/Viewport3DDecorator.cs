@@ -157,14 +157,14 @@ namespace _3DTools
         {
             get
             {
-                Viewport3D viewport3D = null;
+                Viewport3D? viewport3D = null;
                 Viewport3DDecorator currEnhancer = this;
 
                 // we follow the enhancers down until we get the
                 // Viewport3D they are enhancing
                 while (true)
                 {
-                    UIElement currContent = currEnhancer.Content;
+                    UIElement? currContent = currEnhancer.Content;
 
                     if (currContent == null)
                     {

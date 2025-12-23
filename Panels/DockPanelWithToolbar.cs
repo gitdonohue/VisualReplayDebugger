@@ -11,8 +11,8 @@ public class DockPanelWithToolbar : DockPanel
     public ToolBarTray ToolBarTray { get; private set; }
     public ToolBar ToolBar { get; private set; }
 
-    private FrameworkElement content;
-    public FrameworkElement Content 
+    private FrameworkElement? content;
+    public FrameworkElement? Content 
     {
         get => content;
         set
@@ -44,7 +44,7 @@ public class DockPanelWithToolbar : DockPanel
         }
     }
 
-    public ScrollViewer ScrollViewer { get; private set; }
+    public ScrollViewer? ScrollViewer { get; private set; }
 
     public DockPanelWithToolbar(double minHeight = 0, double initialHeight = 0, bool scrolling = false)
     {

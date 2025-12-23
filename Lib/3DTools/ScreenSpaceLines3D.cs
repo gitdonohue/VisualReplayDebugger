@@ -38,7 +38,7 @@ namespace _3DTools
     ///     is specified in the 2D coordinate system of the container
     ///     Viewport3D, not the screen.
     /// </summary>
-    public class ScreenSpaceLines3D : ModelVisual3D
+    public class ScreenSpaceLines3D : ModelVisual3D, IDisposable
     {
         
         public ScreenSpaceLines3D()
@@ -52,6 +52,11 @@ namespace _3DTools
             this.Points = new Point3DCollection();
 
             CompositionTarget.Rendering += OnRender;
+        }
+
+        public void Dispose()
+        {
+            CompositionTarget.Rendering -= OnRender;
         }
 
         public static readonly DependencyProperty ColorProperty =
@@ -125,7 +130,7 @@ namespace _3DTools
             set { SetValue(PointsProperty, value); }
         }
 
-        private void OnRender(object sender, EventArgs e)
+        private void OnRender(object? sender, EventArgs e)
         {
             if (Points.Count == 0 && _mesh.Positions.Count == 0)
             {
@@ -234,7 +239,7 @@ namespace _3DTools
                 pOut42.Z / pOut42.W);
         }
 
-        public Func<Matrix3D> GetVisualToViewportTransform;
+        public Func<Matrix3D>? GetVisualToViewportTransform;
 
         private bool UpdateTransforms()
         {
@@ -290,7 +295,7 @@ namespace _3DTools
 
             try
             {
-                Model3DGroup group = model as Model3DGroup;
+                Model3DGroup? group = model as Model3DGroup;
 
                 if (group != null)
                 {
@@ -298,7 +303,7 @@ namespace _3DTools
                     return;
                 }
 
-                GeometryModel3D geometry = model as GeometryModel3D;
+                GeometryModel3D? geometry = model as GeometryModel3D;
 
                 if (geometry != null)
                 {
@@ -326,7 +331,7 @@ namespace _3DTools
         private void WireframeHelper(GeometryModel3D model, Matrix3DStack matrixStack)
         {
             Geometry3D geometry = model.Geometry;
-            MeshGeometry3D mesh = geometry as MeshGeometry3D;
+            MeshGeometry3D? mesh = geometry as MeshGeometry3D;
 
             if (mesh != null)
             {

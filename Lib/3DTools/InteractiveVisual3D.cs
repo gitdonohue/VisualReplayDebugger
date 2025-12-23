@@ -1028,7 +1028,7 @@ namespace _3DTools
         /// so that the patterns on visuals caused by tabbing, etc... work, 
         /// we wrap the Visual DependencyProperty in a AdornerDecorator.
         /// </summary>
-        internal UIElement InternalVisual
+        internal UIElement? InternalVisual
         {
             get { return _internalVisual; }
         }
@@ -1296,7 +1296,7 @@ namespace _3DTools
         {
             get
             {
-                Visual[] logicalChildren = new Visual[VisualChildrenCount];
+                Visual?[] logicalChildren = new Visual[VisualChildrenCount];
                 for (int i = 0; i < VisualChildrenCount; i++)
                 {
                     logicalChildren[i] = GetVisualChild(i);
