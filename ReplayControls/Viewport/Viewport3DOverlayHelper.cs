@@ -7,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
+using HelixToolkit.Wpf;
+
 namespace VisualReplayDebugger;
 
 public class Viewport3DOverlayHelper : Canvas
@@ -28,7 +30,7 @@ public class Viewport3DOverlayHelper : Canvas
 
     public void SetDirty() => InvalidateVisual();
 
-    private readonly List<(FormattedText txt, Point3D worldpos, Brush backgroundBrush)> Labels = new();
+    private readonly List<(FormattedText txt, Point3D worldpos, Brush? backgroundBrush)> Labels = new();
     public void CreateLabel(string label, Point3D worldpos, int size, Color color) 
     {
         var txt = GetFormattedText(label, size, color);
@@ -38,14 +40,14 @@ public class Viewport3DOverlayHelper : Canvas
     public void ClearLabels() { Labels.Clear(); }
 
 
-    private readonly List<(Point3D worldpos, double radius, Pen pen, Brush brush)> ScreenSpaceCircles = new();
+    private readonly List<(Point3D worldpos, double radius, Pen pen, Brush? brush)> ScreenSpaceCircles = new();
     public void CreateScreenSpaceCircle(Point3D worldpos, double size, Color color)
     {
         ScreenSpaceCircles.Add((worldpos, size, new Pen(new SolidColorBrush(color), 1), null));
     }
     public void ClearScreenSpaceCircles() { ScreenSpaceCircles.Clear(); }
 
-    private readonly List<(Point3D worldpos, Point3D upVect, double radius, Pen pen, Brush brush)> WorldSpaceCircles = new();
+    private readonly List<(Point3D worldpos, Point3D upVect, double radius, Pen pen, Brush? brush)> WorldSpaceCircles = new();
     public void CreateWorldSpaceCircle(Point3D worldpos, Point3D upVect, double size, Color color)
     {
         WorldSpaceCircles.Add((worldpos, upVect, size, new Pen(new SolidColorBrush(color), 1), null));
@@ -65,31 +67,35 @@ public class Viewport3DOverlayHelper : Canvas
         Lines.Clear();
     }
 
-    public Point WorldToScreen(Point3D p) => HelixToolkit.Wpf.Viewport3DHelper.Point3DtoPoint2D(Viewport, p); // TODO: Remove dependency on Helix3D
-    public IEnumerable<Point> WorldToScreen(IEnumerable<Point3D> p) => HelixToolkit.Wpf.Viewport3DHelper.Point3DtoPoint2D(Viewport, p); // TODO: Remove dependency on Helix3D
-
     // TODO: Caching/Reuse
     private FormattedText GetFormattedText(string text, int size, Color color) => new(text,
             System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface, size, new SolidColorBrush(color), 1.0);
 
     protected override void OnRender(DrawingContext dc)
     {
+        Matrix3D xform = Viewport.GetTotalTransform(); // Helix3D extension method
+        var WorldToScreen = (Point3D worldPos) => 
+        {
+            var pt = xform.Transform(worldPos);
+            return new Point(pt.X, pt.Y); 
+        };
+
         dc.PushClip(new System.Windows.Media.RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
         
-        foreach ((FormattedText formattedText, Point3D worldpos, Brush backgroundBrush) in Labels)
+        foreach ((FormattedText formattedText, Point3D worldpos, Brush? backgroundBrush) in Labels)
         {
             Point pos = WorldToScreen(worldpos);
             dc.DrawRectangle(backgroundBrush, null, new Rect(pos, new Size(formattedText.Width, formattedText.Height)));
             dc.DrawText(formattedText, pos);
         }
         
-        foreach ((Point3D worldpos, double size, Pen pen, Brush brush) in ScreenSpaceCircles)
+        foreach ((Point3D worldpos, double size, Pen pen, Brush? brush) in ScreenSpaceCircles)
         {
             Point pos = WorldToScreen(worldpos);
             dc.DrawEllipse(brush, pen, pos, size/2, size /2);
         }
 
-        foreach ((Point3D worldpos, Point3D _, double size, Pen pen, Brush brush) in WorldSpaceCircles)
+        foreach ((Point3D worldpos, Point3D _, double size, Pen pen, Brush? brush) in WorldSpaceCircles)
         {
             Point pos = WorldToScreen(worldpos);
 

@@ -345,13 +345,13 @@ public class ReplayCaptureReader
     public enum EntityDrawCommandType { None, Line, Circle, Sphere, Box, Capsule, Mesh };
     public record EntityDrawCommand
     {
-        public EntityEx entity;
-        public string category;
+        public EntityEx? entity;
+        public string? category;
         public EntityDrawCommandType type;
         public Color color;
         public Transform xform;
         public Point p2; // temp, should be implicit from transform and scale.
-        public Point[] verts;
+        public Point[]? verts;
         public double scale;
         public int frame;
 
@@ -508,7 +508,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityLog:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 string msg = reader.ReadString();
                                 msg = msg.Replace('\r',' '); // newlines stripped
                                 msg = msg.Replace('\n',' '); // newlines stripped
@@ -539,7 +539,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityParameter:
                             {
-                                string label = reader.ReadString();
+                                string label = String.Intern(reader.ReadString());
                                 string val = reader.ReadString();
                                 entity.HasParameters = true;
                                 AddToDynamicPropertiesTable(entity, frame, label, val);
@@ -547,7 +547,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityValue:
                             {
-                                string label = reader.ReadString();
+                                string label = String.Intern(reader.ReadString());
                                 float val = reader.ReadSingle();
                                 entity.HasNumericParameters = true;
                                 EntityDynamicValues.For(entity)?.AddForBake(frame, (label, val));
@@ -555,7 +555,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityLine:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 reader.Read(out Point p1);
                                 reader.Read(out Point p2);
                                 reader.Read(out Color color);
@@ -564,7 +564,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityCircle:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 reader.Read(out Point center);
                                 reader.Read(out Point up);
                                 float radius = reader.ReadSingle();
@@ -574,7 +574,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntitySphere:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 reader.Read(out Point center);
                                 float radius = reader.ReadSingle();
                                 reader.Read(out Color color);
@@ -583,7 +583,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityBox:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 reader.Read(out Transform xform);
                                 reader.Read(out Point dimensions);
                                 reader.Read(out Color color);
@@ -592,7 +592,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityCapsule:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 reader.Read(out Point p1);
                                 reader.Read(out Point p2);
                                 float radius = reader.ReadSingle();
@@ -602,7 +602,7 @@ public class ReplayCaptureReader
                             break;
                         case BlockType.EntityMesh:
                             {
-                                string category = reader.ReadString();
+                                string category = String.Intern(reader.ReadString());
                                 int vertexCount = reader.ReadInt32();
                                 Point[] verts = new Point[vertexCount];
                                 for(int i = 0; i < vertexCount; ++i) { reader.Read(out Point p); verts[i] = p; }
@@ -764,9 +764,9 @@ internal static class BinaryIOExtensionsRead
         entity = new EntityEx();
         entity.Id = r.Read7BitEncodedInt();
         entity.Name = r.ReadString();
-        entity.Path = r.ReadString();
-        entity.TypeName = r.ReadString();
-        entity.CategoryName = r.ReadString();
+        entity.Path = String.Intern(r.ReadString());
+        entity.TypeName = String.Intern(r.ReadString());
+        entity.CategoryName = String.Intern(r.ReadString());
         r.Read(out entity.InitialTransform);
         r.Read(out entity.StaticParameters);
         entity.CreationFrame = r.Read7BitEncodedInt();
@@ -807,7 +807,7 @@ internal static class BinaryIOExtensionsRead
         while (count-- > 0)
         {
             //stringDict.Add(r.ReadString(), r.ReadString());
-            stringDict[r.ReadString()] = r.ReadString();
+            stringDict[String.Intern(r.ReadString())] = r.ReadString();
         }
     }
 

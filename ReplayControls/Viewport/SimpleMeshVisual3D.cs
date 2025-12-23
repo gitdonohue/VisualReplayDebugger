@@ -2,9 +2,9 @@
 // This code is licensed under MIT license (see LICENSE file for details)
 
 using HelixToolkit.Geometry;
-using HelixToolkit.Wpf;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using VisualReplayDebugger.Utils;
 using Point3D = System.Windows.Media.Media3D.Point3D;
 
@@ -13,10 +13,10 @@ namespace HelixToolkit.Wpf
     public class SimpleMeshVisual3D : MeshElement3D
     {
 
-        private Point3D[] _verts;
+        private List<Vector3> _verts;
         public SimpleMeshVisual3D(IEnumerable<Point3D> verts) : base()
         {
-            _verts = verts.ToArray();
+            _verts = verts.Select(p => new Vector3((float)p.X,(float)p.Y,(float)p.Z)).ToList();
             UpdateModel();
         }
 
@@ -25,7 +25,7 @@ namespace HelixToolkit.Wpf
             var builder = new MeshBuilder(false, false);
             if (_verts != null)
             {
-                //builder.Append(_verts, Enumerable.Range(0, _verts.Length).ToArray());
+                builder.Append(_verts, Enumerable.Range(0, _verts.Count).ToList());
             }
             return builder.ToMesh().ConvertToWndMeshGeometry3D();
         }

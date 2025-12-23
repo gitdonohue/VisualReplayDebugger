@@ -247,32 +247,13 @@ public class ReplayViewportContent // TODO: Make IDisposable
     }
 
     readonly Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColors = new();
-    
+
     readonly List<MeshElement3D> drawnSpheres = new();
     private void DrawSpheresClear()
     {
         foreach (var s in drawnSpheres)
         {
             s.Visible = false;
-        }
-    }
-
-    readonly List<CapsuleVisual3D> capsulesCache = new();
-    readonly HashSet<CapsuleVisual3D> availableCapsules = new();
-    private void DrawCapsulesPre()
-    {
-        availableCapsules.Clear();
-        foreach (var c in capsulesCache) { availableCapsules.Add(c); }
-    }
-    private void DrawCapsulesPost()
-    {
-        // Hide unused at end of draw
-        foreach(var c in capsulesCache)
-        {
-            if (availableCapsules.Contains(c) && c.Visible) 
-            { 
-                c.Visible = false; 
-            }
         }
     }
 
@@ -294,13 +275,50 @@ public class ReplayViewportContent // TODO: Make IDisposable
         sphere.Visible = true;
     }
 
+    readonly List<BoxVisual3D> drawnBoxes = new();
+    private void DrawBoxesClear()
+    {
+        foreach (var s in drawnBoxes)
+        {
+            s.Visible = false;
+        }
+    }
+
     private void DrawBox(ReplayCapture.Transform xfrom, Point dimensions, ReplayCapture.Color color)
     {
-        var box = new BoxVisual3D() { Width = dimensions.X, Length = dimensions.Y, Height = dimensions.Z };
-        Model3DGroup.Children.Add(box.Content);
+        BoxVisual3D? box = drawnBoxes.FirstOrDefault(x => !x.Visible);
+        if (box == null)
+        {
+            box =  new BoxVisual3D() { Width = dimensions.X, Length = dimensions.Y, Height = dimensions.Z };
+            Model3DGroup.Children.Add(box.Content);
+            drawnBoxes.Add(box);
+        }
+        
+        box.Width = dimensions.X;
+        box.Height = dimensions.Y;
+        box.Length = dimensions.Z;
         box.Model.Transform = xfrom.ToTransform3D();
         box.Material = MaterialsForColors[color];
         box.Visible = true;
+    }
+
+    readonly List<CapsuleVisual3D> capsulesCache = new();
+    readonly HashSet<CapsuleVisual3D> availableCapsules = new();
+    private void DrawCapsulesPre()
+    {
+        availableCapsules.Clear();
+        foreach (var c in capsulesCache) { availableCapsules.Add(c); }
+    }
+    private void DrawCapsulesPost()
+    {
+        // Hide unused at end of draw
+        foreach(var c in capsulesCache)
+        {
+            if (availableCapsules.Contains(c) && c.Visible) 
+            { 
+                c.Visible = false; 
+            }
+        }
     }
 
     private void DrawCapsule(Point p1, Point p2, double radius, ReplayCapture.Color color) => DrawCapsule(p1.ToPoint(), p2.ToPoint(), radius, color);
@@ -444,6 +462,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         
         DrawLinesClear();
         DrawSpheresClear();
+        DrawBoxesClear();
         DrawCapsulesPre();
 
         int cursorFrame = Replay.GetFrameForTime(TimelineWindow.Timeline.Cursor);
