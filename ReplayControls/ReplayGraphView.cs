@@ -41,7 +41,7 @@ public class ReplayGraphView : UserControl, IDisposable
     public WatchedBool EntitySelectionLocked { get; } = new(false);
     public WatchedBool GraphsFilled { get; } = new(true);
     public WatchedBool GraphsStackedByEntity { get; } = new(true);
-    public WatchedBool GraphsStackedByParameter { get; } = new(false);
+    public WatchedBool GraphsStackedByParameter { get; } = new(true);
     public WatchedBool GraphsStackedByParameterDepth { get; } = new(true);
     public WatchedBool Autoscale { get; } = new(false);
 

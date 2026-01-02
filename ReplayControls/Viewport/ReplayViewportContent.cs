@@ -76,6 +76,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public WatchedBool ShowEntityAxii { get; } = new(true);
     public WatchedBool ShowEntityCircle { get; } = new(true);
     public WatchedBool ShowAllDrawPrimitivesInRange { get; } = new(true);
+    public WatchedBool SemitransparentDraws { get; } = new(false);
 
     public ReplayViewportContent(Viewport3D viewport, ReplayCaptureReader replay, TimelineWindow timelinewindow, SelectionGroup<Entity> selectionset, SelectionGroup<Entity> hiddenset,
         SelectionGroup<string> drawCategoryFilter, SelectionGroup<ReplayCapture.Color> drawColorFilter)
@@ -109,6 +110,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         ShowEntityAxii.Changed += Redraw;
         ShowEntityCircle.Changed += Redraw;
         ShowAllDrawPrimitivesInRange.Changed += Redraw;
+        SemitransparentDraws.Changed += Redraw;
         this.Viewport3D.IsVisibleChanged += (o, e) => Redraw(); // TODO: Make IDiposable
 
         Replay = replay;
@@ -139,7 +141,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                 {
                     if (geom is MeshElement3D meshgeom)
                     {
-                        var col = MaterialsForColors.Where(x => x.Value == meshgeom.Material).First().Key;
+                        var col = MaterialsForColors.Concat(MaterialsForColorsSemiTransp).Where(x => x.Value == meshgeom.Material).First().Key;
                         if (DrawColorFilter.Contains(col))
                         {
                             isVisible = false;
@@ -247,6 +249,12 @@ public class ReplayViewportContent // TODO: Make IDisposable
     }
 
     readonly Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColors = new();
+    readonly Dictionary<ReplayCapture.Color, System.Windows.Media.Media3D.Material> MaterialsForColorsSemiTransp = new();
+
+    System.Windows.Media.Media3D.Material GetMaterialForColor(ReplayCapture.Color color)
+    {
+        return SemitransparentDraws ? MaterialsForColorsSemiTransp[color] : MaterialsForColors[color];
+    }
 
     readonly List<MeshElement3D> drawnSpheres = new();
     private void DrawSpheresClear()
@@ -271,7 +279,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         var posxform = new TranslateTransform3D() { OffsetX = pos.X, OffsetY = pos.Y, OffsetZ = pos.Z };
         var scalexform = new ScaleTransform3D(radius, radius, radius);
         sphere.Model?.Transform = new MatrixTransform3D(scalexform.Value * posxform.Value);
-        sphere.Material = MaterialsForColors[color];
+        sphere.Material = GetMaterialForColor(color);
         sphere.Visible = true;
     }
 
@@ -298,7 +306,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
         box.Height = dimensions.Y;
         box.Length = dimensions.Z;
         box.Model?.Transform = xfrom.ToTransform3D();
-        box.Material = MaterialsForColors[color];
+        box.Material = GetMaterialForColor(color);
         box.Visible = true;
     }
 
@@ -335,7 +343,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
             Model3DGroup.Children.Add(capsule.Content);
             capsulesCache.Add(capsule);
         }
-        capsule.Material = MaterialsForColors[color];
+        capsule.Material = GetMaterialForColor(color);
         capsule.Visible = true;
     }
 
@@ -348,12 +356,16 @@ public class ReplayViewportContent // TODO: Make IDisposable
         CameraEntity = null;
 
         MaterialsForColors.Clear();
+        MaterialsForColorsSemiTransp.Clear();
         foreach (ReplayCapture.Color color in Enum.GetValues(typeof(ReplayCapture.Color)))
         {
             var c = (System.Windows.Media.Color)ColorConverter.ConvertFromString(color.ToString());
             ColorConversion[color] = c;
             LinesByColor[color] = CreateLineGroup(c);
             MaterialsForColors[color] = MaterialHelper.CreateMaterial(new SolidColorBrush(c), specularPower: 50);
+
+            c.A = 100;
+            MaterialsForColorsSemiTransp[color] = MaterialHelper.CreateMaterial(new SolidColorBrush(c), specularPower: 50);
         }
 
         foreach (var linegroup in LinesByColor.Values) { linegroup.Points.Clear(); }
@@ -408,7 +420,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
 
                     if (geom is MeshElement3D meshgeom)
                     {
-                        meshgeom.Material = MaterialsForColors[creationDrawCommand.color];
+                        meshgeom.Material = GetMaterialForColor(creationDrawCommand.color);
                     }
 
                     if (geom != null)

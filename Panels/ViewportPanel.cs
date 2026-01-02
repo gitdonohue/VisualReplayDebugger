@@ -62,6 +62,10 @@ class ViewportPanel : DockPanelWithToolbar, IDisposable
         showEnitityCircle.BindTo(replayViewport3d.ShowEntityCircle);
         ToolBar.Items.Add(showEnitityCircle);
 
+        var semitransparentDraws = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.Windows), ToolTip = "Semitransparent draws" };
+        semitransparentDraws.BindTo(replayViewport3d.SemitransparentDraws);
+        ToolBar.Items.Add(semitransparentDraws);
+
         var showEnitityAxii = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.ArrowsUpDownLeftRight), ToolTip = "Show entities Axis" };
         showEnitityAxii.BindTo(replayViewport3d.ShowEntityAxii);
         ToolBar.Items.Add(showEnitityAxii);

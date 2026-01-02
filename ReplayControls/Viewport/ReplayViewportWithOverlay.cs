@@ -27,6 +27,7 @@ public class ReplayViewportWithOverlay : Grid
     public WatchedBool ShowEntityGeometry { get; } = new(true);
     public WatchedBool ShowEntityAxii { get; } = new(true);
     public WatchedBool ShowEntityCircle { get; } = new(true);
+    public WatchedBool SemitransparentDraws { get; } = new(false);
     public SelectionGroup<string> DrawCategoryFilter { get; } = new();
     public SelectionGroup<ReplayCapture.Color> DrawColorFilter { get; } = new();
 
@@ -77,6 +78,7 @@ public class ReplayViewportWithOverlay : Grid
         ReplayViewportContent.ShowEntityGeometry.BindWith(ShowEntityGeometry);
         ReplayViewportContent.ShowEntityCircle.BindWith(ShowEntityCircle);
         ReplayViewportContent.ShowAllDrawPrimitivesInRange.BindWith(ShowAllDrawPrimitivesInRange);
+        ReplayViewportContent.SemitransparentDraws.BindWith(SemitransparentDraws);
         ReplayViewportContent.FocusAtRequested += (p) => { viewport3D.LookAt(p, 200); };
         viewport3D.Children.Add(ReplayViewportContent.ModelVisual3D);
         ReplayViewportContent.CameraManuallyMoved += () => CameraManuallyMoved?.Invoke();
@@ -88,6 +90,7 @@ public class ReplayViewportWithOverlay : Grid
         ShowAllNames.Changed += overlay2D.SetDirty;
         ShowEntityAxii.Changed += overlay2D.SetDirty;
         ShowEntityCircle.Changed += overlay2D.SetDirty;
+        SemitransparentDraws.Changed += overlay2D.SetDirty;
         ReplayViewportContent.DrawLabelRequest += (string txt, Point3D pos, int sz) => overlay2D.CreateLabel(txt, pos, sz, Colors.Black);
         ReplayViewportContent.DrawLabelResetRequest += overlay2D.ClearLabels;
         ReplayViewportContent.DrawScreenSpaceCircleRequest += (Point3D pos, double sz, System.Windows.Media.Color color) => overlay2D.CreateScreenSpaceCircle(pos,sz,color);
