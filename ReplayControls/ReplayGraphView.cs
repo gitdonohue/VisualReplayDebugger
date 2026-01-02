@@ -22,7 +22,7 @@ namespace VisualReplayDebugger;
 
 public class ReplayGraphView : UserControl, IDisposable
 {
-    ReplayCaptureReader replay;
+    ReplayCaptureReader replay = null!;
     public ReplayCaptureReader Replay
     {
         get => replay;
@@ -49,6 +49,7 @@ public class ReplayGraphView : UserControl, IDisposable
 
     private static readonly System.Globalization.CultureInfo TextCultureInfo =  System.Globalization.CultureInfo.GetCultureInfo("en-us");
     private static readonly Typeface TextTypeface = new("Arial");
+    private static readonly char[] SplitSeparators = new char[]{ '.', '\\', '/' };
 
     private List<Entity> SelectedEntities { get; } = new();
     private const int MaxSelectedElements = 10;
@@ -174,37 +175,12 @@ public class ReplayGraphView : UserControl, IDisposable
         SetDirty();
     }
 
-    static Brush BackgroundBrush;
-    static Pen GraphPen;
-    static Pen CursorPen;
-    static Pen SeparatorPen;
+    static Brush? BackgroundBrush;
+    static Pen? GraphPen;
+    static Pen? CursorPen;
+    static Pen? SeparatorPen;
 
-    static readonly char[] SplitSeparators = new char[]{ '.', '\\', '/' };
-
-    double lastStart;
-    double lastEnd;
-    private void TimelineWindow_Changed()
-    {
-        if (TimelineWindow.Start != lastStart || TimelineWindow.End != lastEnd)
-        {
-            RequestFastRedraw();
-        }
-        lastStart = TimelineWindow.Start;
-        lastEnd = TimelineWindow.End;
-        SetDirty();
-    }
-
-    private void EntitySelection_Changed()
-    {
-        if (!EntitySelectionLocked)
-        {
-            SelectedEntities.Clear();
-            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
-            RequestFullRedraw();
-        }
-    }
-
-    RenderTargetBitmap GraphsBitmap;
+    RenderTargetBitmap? GraphsBitmap;
     readonly System.Timers.Timer FastRedrawTimer;
 
     private void ResizeGraphsBitmap(double reductionFactor = 1)
@@ -245,16 +221,20 @@ public class ReplayGraphView : UserControl, IDisposable
 
     private void RequestFastRedraw()
     {
-        if (RenderMode == RenderModeType.BitmapWithLoRezFastDraw)
+        if (RenderMode == RenderModeType.Direct)
         {
+            SetDirty();
+        }
+        else if (RenderMode == RenderModeType.BitmapWithLoRezFastDraw)
+        {
+            ResizeGraphsBitmap(2);
+            RequestFullRedraw();
             FastRedrawTimer.Stop();
             FastRedrawTimer.Start();
-            ResizeGraphsBitmap(4);
         }
-        RequestFullRedraw();
     }
 
-    private void FastRedrawTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+    private void FastRedrawTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
     {
         FastRedrawTimer.Stop();
         Application.Current.Dispatcher.Invoke(() =>
@@ -535,5 +515,21 @@ public class ReplayGraphView : UserControl, IDisposable
     public static void DebugLog(string message)
     {
         System.Diagnostics.Debug.WriteLine(message);
+    }
+
+    private void TimelineWindow_Changed()
+    {
+        RequestFastRedraw();
+        SetDirty();
+    }
+
+    private void EntitySelection_Changed()
+    {
+        if (!EntitySelectionLocked)
+        {
+            SelectedEntities.Clear();
+            SelectedEntities.AddRange(EntitySelection.SelectionSet.Take(MaxSelectedElements));
+            RequestFullRedraw();
+        }
     }
 }

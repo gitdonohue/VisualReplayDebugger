@@ -380,7 +380,11 @@ namespace _3DTools
             if (closestDistance != Double.MaxValue)
             {
                 UIElement uiElemWCapture = (UIElement)Mouse.Captured;
-                UIElement uiElemOnMesh = imv3DHit.InternalVisual;
+                UIElement? uiElemOnMesh = imv3DHit?.InternalVisual;
+                if (uiElemOnMesh == null)
+                {
+                    throw new InvalidOperationException("uiElemOnMesh not found");
+                }
                 
                 Rect contBounds = VisualTreeHelper.GetDescendantBounds(uiElemWCapture);                
                 Point ptOnVisual = TextureCoordsToVisualCoords(closestIntersection, uiElemOnMesh);
@@ -396,9 +400,11 @@ namespace _3DTools
 
                 Point finalVisualPoint = uiElemWCapture.TransformToAncestor(uiElemOnMesh).Transform(ptRelToCapture);                
                 
-                _closestIntersectInfo = new ClosestIntersectionInfo(VisualCoordsToTextureCoords(finalVisualPoint, uiElemOnMesh), 
-                                                                    imv3DHit.InternalVisual, 
-                                                                    imv3DHit);                 
+                if (imv3DHit?.InternalVisual == null)
+                {
+                    throw new InvalidOperationException("imv3DHit.InternalVisual not found");
+                }
+                _closestIntersectInfo = new ClosestIntersectionInfo(VisualCoordsToTextureCoords(finalVisualPoint, uiElemOnMesh), imv3DHit.InternalVisual, imv3DHit);
             }
         }
        
@@ -472,7 +478,7 @@ namespace _3DTools
 
                     // depending on whether or not it has focus, do two different things, either
                     // use the _oldKeyboardFocusVisual or the _oldHiddenVisual
-                    Decorator _oldVisToUse = null;
+                    Decorator? _oldVisToUse = null;
                     if (prevVisual != null && prevVisual.IsKeyboardFocusWithin)
                     {
                         _oldVisToUse = _oldKeyboardFocusVisual;

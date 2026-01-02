@@ -154,11 +154,11 @@ public class TimelineMouseControlHandler
             {
                 TimelineWindow.SlideWindow(TimeScale(delta));
             }
-            else if (MouseScrollMode == MouseScrollModes.StartScroll)
+            else if (MouseScrollMode == MouseScrollModes.StartScroll && TimelineWindow != null)
             {
                 TimelineWindow.Start += TimeScale(delta);
             }
-            else if (MouseScrollMode == MouseScrollModes.EndScroll)
+            else if (MouseScrollMode == MouseScrollModes.EndScroll && TimelineWindow != null)
             {
                 TimelineWindow.End += TimeScale(delta);
             }

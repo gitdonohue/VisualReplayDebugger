@@ -22,6 +22,7 @@ using System.Windows.Documents;
 using System.Collections;
 
 using Point3D = System.Windows.Media.Media3D.Point3D;
+using System.Linq;
 
 namespace _3DTools
 {
@@ -193,7 +194,7 @@ namespace _3DTools
                     sameAsBefore = false;
                 }
             }
-            if (sameAsBefore) return _lastEdges;
+            if (sameAsBefore) return _lastEdges ?? Enumerable.Empty<HitTestEdge>().ToList();
 
             // save the matrix that was just used
             _lastMatrix3D = objectToViewportTransform;
@@ -1039,7 +1040,8 @@ namespace _3DTools
         private VisualBrush InternalVisualBrush
         {
             get 
-            { 
+            {
+                if (_visualBrush == null) throw new InvalidOperationException("InternalVisualBrush not set");
                 return _visualBrush; 
             }
 
@@ -1052,7 +1054,7 @@ namespace _3DTools
         internal static void OnVisualChanged(Object sender, DependencyPropertyChangedEventArgs e)
         {
             InteractiveVisual3D imv3D = ((InteractiveVisual3D)sender);
-            AdornerDecorator ad = null;
+            AdornerDecorator? ad = null;
             if (imv3D.InternalVisual != null)
             {
                 ad = ((AdornerDecorator)imv3D.InternalVisual);

@@ -21,7 +21,7 @@ class EntityPropertiesControl : TextBox
 
     private readonly ITimelineWindow TimelineWindow;
 
-    public ReplayCaptureReader replay;
+    public ReplayCaptureReader replay = null!;
     public ReplayCaptureReader Replay
     {
         get => replay;

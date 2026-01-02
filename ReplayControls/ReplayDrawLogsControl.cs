@@ -16,7 +16,7 @@ class ReplayDrawLogsControl : ICSharpCode.AvalonEdit.TextEditor
     public WatchedBool ShowSelectedLogsOnly { get; } = new(false);
     public WatchedBool ShowAllDrawsInRange { get; } = new(false);
 
-    ReplayCaptureReader replay;
+    ReplayCaptureReader replay = null!;
     public ReplayCaptureReader Replay
     {
         get => replay;
@@ -72,7 +72,7 @@ class ReplayDrawLogsControl : ICSharpCode.AvalonEdit.TextEditor
 
         if (ShowSelectedLogsOnly)
         {
-            drawLogs = drawLogs.Where(x => EntitySelection.Contains(x.val.entity));
+            drawLogs = drawLogs.Where(x => x.val.entity != null && EntitySelection.Contains(x.val.entity));
         }
 
         // Show where the current time would be in the log

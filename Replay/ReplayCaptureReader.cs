@@ -39,7 +39,6 @@ public class ReplayCaptureReader
             internal_frames = baking_list.Select(x => x.frame).ToArray();
             internal_values = baking_list.Select(x => x.val).ToArray();
             baking_list.Clear();
-            baking_list = null;
         }
 
         public void Load(IEnumerable<(int frame,T val)> values)
@@ -48,7 +47,6 @@ public class ReplayCaptureReader
             internal_frames = values.Select(x => x.frame).ToArray();
             internal_values = values.Select(x => x.val).ToArray();
             baking_list.Clear();
-            baking_list = null;
         }
 
         public int FirstIndexFor(int frame)
@@ -66,7 +64,11 @@ public class ReplayCaptureReader
         public T FirstAtFrame(int frame)
         {
             int index = FirstIndexFor(frame);
-            return (index < 0) ? default(T) : internal_values[index];
+            if (index < 0 || index >= internal_values.Length)
+            {
+                return default!;
+            }
+            return internal_values[index];
         }
 
         public IEnumerable<(int frame, T val)> SubRange(FrameRange range)
@@ -127,10 +129,11 @@ public class ReplayCaptureReader
     {
         public V For(K key)
         {
-            if (!TryGetValue(key, out V val))
+            V? val;
+            if (!TryGetValue(key, out val) || val == null)
             {
                 val = new V();
-                Add(key, val);
+                this[key] = val;
             }
             return val;
         }

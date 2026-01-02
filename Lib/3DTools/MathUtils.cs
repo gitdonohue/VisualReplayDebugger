@@ -72,16 +72,12 @@ namespace _3DTools
                 throw new ArgumentNullException("camera");
             }
 
-            ProjectionCamera projectionCamera = camera as ProjectionCamera;
-
-            if (projectionCamera != null)
+            if (camera is ProjectionCamera projectionCamera)
             {
                 return GetViewMatrix(projectionCamera);
             }
 
-            MatrixCamera matrixCamera = camera as MatrixCamera;
-
-            if (matrixCamera != null)
+            if (camera is MatrixCamera matrixCamera)
             {
                 return matrixCamera.ViewMatrix;
             }
@@ -151,23 +147,17 @@ namespace _3DTools
                 throw new ArgumentNullException("camera");
             }
 
-            PerspectiveCamera perspectiveCamera = camera as PerspectiveCamera;
-
-            if (perspectiveCamera != null)
+            if (camera is PerspectiveCamera perspectiveCamera)
             {
                 return GetProjectionMatrix(perspectiveCamera, aspectRatio);
             }
 
-            OrthographicCamera orthographicCamera = camera as OrthographicCamera;
-
-            if (orthographicCamera != null)
+            if (camera is OrthographicCamera orthographicCamera)
             {
                 return GetProjectionMatrix(orthographicCamera, aspectRatio);
             }
 
-            MatrixCamera matrixCamera = camera as MatrixCamera;
-
-            if (matrixCamera != null)
+            if (camera is MatrixCamera matrixCamera)
             {
                 return matrixCamera.ProjectionMatrix;
             }
@@ -269,7 +259,6 @@ namespace _3DTools
         private static Matrix3D GetWorldTransformationMatrix(DependencyObject visual, out Viewport3DVisual viewport)
         {
             Matrix3D worldTransform = Matrix3D.Identity;
-            viewport = null;
 
             if (!(visual is Visual3D))
             {
@@ -293,22 +282,19 @@ namespace _3DTools
                 visual = VisualTreeHelper.GetParent(visual);
             }
 
-            viewport = visual as Viewport3DVisual;
+            var vp = visual as Viewport3DVisual;
 
-            if (viewport == null)
+            if (vp == null)
             {
-                if (visual != null)
-                {
-                    // In WPF 3D v1 the only possible configuration is a chain of
-                    // ModelVisual3Ds leading up to a Viewport3DVisual.
+                // In WPF 3D v1 the only possible configuration is a chain of
+                // ModelVisual3Ds leading up to a Viewport3DVisual.
 
-                    throw new ApplicationException(
-                        String.Format("Unsupported type: '{0}'.  Expected tree of ModelVisual3Ds leading up to a Viewport3DVisual.",
-                        visual.GetType().FullName));
-                }
-
-                return ZeroMatrix;
+                throw new ApplicationException(
+                    String.Format("Unsupported type: '{0}'.  Expected tree of ModelVisual3Ds leading up to a Viewport3DVisual.",
+                    visual?.GetType().FullName));
             }
+
+            viewport = vp;
 
             return worldTransform;
         }

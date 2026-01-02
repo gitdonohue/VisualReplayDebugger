@@ -14,7 +14,7 @@ namespace TimelineControls
 {
     public class TimelineViewControl : UserControl
     {
-        private ITimeline timeline;
+        private ITimeline timeline = null!;
         public ITimeline Timeline
         {
             get => timeline;

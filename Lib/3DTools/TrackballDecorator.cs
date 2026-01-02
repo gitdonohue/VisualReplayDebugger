@@ -109,7 +109,7 @@ namespace _3DTools
 
                 _previousPosition2D = currentPosition;
 
-                Viewport3D viewport3D = this.Viewport3D;
+                Viewport3D? viewport3D = this.Viewport3D;
                 if (viewport3D != null)
                 {
                     if (viewport3D.Camera != null)

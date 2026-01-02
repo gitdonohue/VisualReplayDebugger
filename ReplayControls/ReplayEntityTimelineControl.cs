@@ -62,11 +62,11 @@ class ReplayEntityTimelineControl : UserControl, IDisposable
 
     private void SetDirty() { InvalidateVisual(); }
 
-    Brush BackgroundBrush;
-    Brush WindowBrush;
-    Brush InRangeBrush;
-    Pen CursorPen;
-    Pen LogTickPen;
+    Brush? BackgroundBrush;
+    Brush? WindowBrush;
+    Brush? InRangeBrush;
+    Pen? CursorPen;
+    Pen? LogTickPen;
     protected override void OnRender(DrawingContext dc)
     {
         if (BackgroundBrush == null) BackgroundBrush = new SolidColorBrush() { Color = Colors.AliceBlue };

@@ -100,7 +100,7 @@ namespace _3DTools
         /// <returns>The converted value</returns>
         public override object Convert(MeshGeometry3D mesh, object parameter)
         {
-            string paramAsString = parameter as string;
+            string? paramAsString = parameter as string;
             if (parameter != null && paramAsString == null)
             {
                 throw new ArgumentException("Parameter must be a string.");
@@ -196,7 +196,7 @@ namespace _3DTools
         {
             if (mesh == null)
             {
-                return null;
+                return new PointCollection();
             }
 
             Rect3D bounds = mesh.Bounds;
@@ -233,7 +233,7 @@ namespace _3DTools
         {
             if (mesh == null)
             {
-                return null;
+                return new PointCollection();
             }
 
             Rect3D bounds = mesh.Bounds;
@@ -275,7 +275,7 @@ namespace _3DTools
         {
             if (mesh == null)
             {
-                return null;
+                return new PointCollection();
             }
 
             Rect3D bounds = mesh.Bounds;

@@ -181,6 +181,8 @@ namespace _3DTools
                     }                    
                 }
 
+                if (viewport3D == null) throw new ApplicationException("No viewport found");
+
                 return viewport3D;
             }
         }        
@@ -425,8 +427,8 @@ namespace _3DTools
         //  Private data
         //
         //---------------------------------------------------------        
-        private UIElementCollection? _preViewportChildren;
-        private UIElementCollection? _postViewportChildren;
+        private UIElementCollection _preViewportChildren { get; init; }
+        private UIElementCollection _postViewportChildren { get; init; }
         private UIElement? _content;
     }
 }

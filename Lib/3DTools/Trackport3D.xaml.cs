@@ -86,6 +86,7 @@ namespace _3DTools
 
         private void SetupScene()
         {
+            if (_model == null) return;
             switch (ViewMode)
             {
                 case ViewMode.Solid:
@@ -109,6 +110,6 @@ namespace _3DTools
         }
 
         private ViewMode _viewMode;
-        private Model3D _model;
+        private Model3D? _model;
     }
 }

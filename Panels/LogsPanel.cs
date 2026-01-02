@@ -22,7 +22,7 @@ class LogsPanel : DockPanelWithToolbar, IDisposable
         mainwindow.ReplayChanged += (replay) => replayLogsView.Replay = replay;
 
         replayLogsView.ScrollOwner = this.ScrollViewer;
-        this.LayoutUpdated += (o,e) => replayLogsView.ScrollingUpdated(this.ScrollViewer);
+        this.LayoutUpdated += (o,e) => { if(this.ScrollViewer != null) replayLogsView.ScrollingUpdated(this.ScrollViewer); };
 
         var showonlyselectedlogs = new ToggleButton() { Content = IconProvider.GetIcon(FontAwesomeIcon.MousePointer), ToolTip = "Show Logs for selected entities only" };
         showonlyselectedlogs.BindTo(replayLogsView.ShowSelectedLogsOnly);

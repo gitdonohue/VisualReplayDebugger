@@ -24,7 +24,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
     public Model3DGroup Model3DGroup { get; private set; }
     public Viewport3D Viewport3D { get; private set; }
 
-    ReplayCaptureReader replay;
+    ReplayCaptureReader replay = null!;
     public ReplayCaptureReader Replay 
     { 
         get => replay; 
@@ -175,9 +175,9 @@ public class ReplayViewportContent // TODO: Make IDisposable
             (cb) =>
             {
                 var hitresult = cb as RayMeshGeometry3DHitTestResult;
-                var geom = hitresult.ModelHit;
+                var geom = hitresult?.ModelHit;
                 //var geom = hitModel.Content as GeometryModel3D;
-                if (geom != null && EntityModelsIndex.TryGetValue(geom, out Entity entity))
+                if (geom != null && EntityModelsIndex.TryGetValue(geom, out Entity? entity))
                 {
                     if (Keyboard.IsKeyDown(Key.LeftCtrl))
                     {
@@ -483,6 +483,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                 if (lifetime.Overlaps(windowRange))
                 {
                     var positions = Replay.GetEntityTransforms(entity);
+                    if (positions == null) continue;
                     var points = pathLines.Points;
 
                     // Show window only

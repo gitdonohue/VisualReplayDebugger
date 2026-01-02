@@ -35,16 +35,16 @@ public partial class MainWindow : Window
 
     public WatchedBool Play { get; } = new();        
 
-    public event Action FocusOnSelected;
-    public event Action JumpToNext;
-    public event Action JumpToPrevious;
-    public event Action FindCalled;
-    public event Action CopyCalled;
+    public event Action? FocusOnSelected;
+    public event Action? JumpToNext;
+    public event Action? JumpToPrevious;
+    public event Action? FindCalled;
+    public event Action? CopyCalled;
 
-    internal ReplayCaptureReader Replay;
-    internal event Action<ReplayCaptureReader> ReplayChanged;
-    internal TimelineWindow TimelineWindow;
-    internal TimelineController TimelineController;
+    internal ReplayCaptureReader Replay = null!;
+    internal event Action<ReplayCaptureReader>? ReplayChanged;
+    internal TimelineWindow TimelineWindow = null!;
+    internal TimelineController TimelineController = null!;
     internal ColorProvider ColorProvider { get; } = new();
 
     public MainWindow()
@@ -102,12 +102,12 @@ public partial class MainWindow : Window
         {
             if (!System.Diagnostics.Debugger.IsAttached)
             {
-                MessageBox.Show($"Exception: {e.Exception.Message}\n{e.Exception.StackTrace.Split("\r\n").FirstOrDefault()}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                e.Handled = true;
+                MessageBox.Show($"Exception: {e.Exception.Message}\n{e?.Exception?.StackTrace?.Split("\r\n").FirstOrDefault()}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                e?.Handled = true;
             }
         };
 
-        string replayPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
+        string? replayPath = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault();
         if (!string.IsNullOrEmpty(replayPath))
         {
             LoadReplay(replayPath);

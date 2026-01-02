@@ -69,9 +69,28 @@ public class ReplayCaptureWriter : IReplayWriter, IDisposable
         ++FrameCounter;
     }
 
+    private BinaryReplayWriter? Writer;
+
+    readonly object NullEntityObj = new();
+    private Entity GetEntity(object obj)
+    {
+        if (obj == null) { return GetEntity(NullEntityObj); }
+        if (EntityMapping.TryGetValue(obj, out Entity? entity) && entity != null)
+        {
+            return entity;
+        }
+        else
+        {
+            // Auto-create
+            var objName = obj.ToString() ?? string.Empty;
+            RegisterEntity(obj, objName, objName, obj.GetType().Name, "None", Transform.Identity);
+            return EntityMapping[obj];
+        }
+    }
+
     public void RegisterEntity(object obj, string name, string path, string typename, string categoryname, Transform initialTransofrm, Dictionary<string, string>? staticParameters = null)
     {
-        if (!EntityMapping.TryGetValue(obj, out Entity entity))
+        if (!EntityMapping.TryGetValue(obj, out Entity? entity) || entity == null)
         {
             EntityCounter++;
             entity = new Entity() { Id = EntityCounter };
@@ -121,24 +140,6 @@ public class ReplayCaptureWriter : IReplayWriter, IDisposable
     private bool IsEqual(Quaternion q1, Quaternion q2) => q1.X == q2.X && q1.Y == q2.Y && q1.Z == q2.Z && q1.W == q2.W;
     private bool IsEqual(Transform xform1, Transform xform2) => IsEqual(xform1.Translation, xform2.Translation) && IsEqual(xform1.Rotation, xform2.Rotation);
 
-    private BinaryReplayWriter Writer;
-
-    readonly object NullEntityObj = new();
-    private Entity GetEntity(object obj)
-    {
-        if (obj == null) { return GetEntity(NullEntityObj); }
-        if (EntityMapping.TryGetValue(obj, out Entity entity))
-        {
-            return entity;
-        }
-        else
-        {
-            // Auto-create
-            RegisterEntity(obj, obj.ToString(), obj.ToString(), obj.GetType().Name, "None", Transform.Identity);
-            return EntityMapping[obj];
-        }
-    }
-
     private void SetPosition(Entity entity, Point pos)
     {
         if (!LastTransforms.TryGetValue(entity, out Transform last_xform) || !IsEqual(pos, last_xform.Translation))
@@ -179,7 +180,7 @@ public class ReplayCaptureWriter : IReplayWriter, IDisposable
         if (!string.IsNullOrEmpty(category)) throw new NotImplementedException("Mesh draws are only supported at entity creation (category empty)");
         Writer?.WriteEntityMesh(entity, FrameCounter, category, verts, color);
     }
-    private void DrawLine(Entity entity, string category, Point p1, Point p2, Color color) => Writer?.WriteEntityLine(entity, FrameCounter, category, p1, p2, color);
+    private void DrawLine(Entity entity, int frame, string category, Point p1, Point p2, Color color) => Writer?.WriteEntityLine(entity, FrameCounter, category, p1, p2, color);
     private void DrawCircle(Entity entity, string category, Point position, Point up, float radius, Color color) => Writer?.WriteEntityCircle(entity, FrameCounter, category, position, up, radius, color);
 
     #endregion //private

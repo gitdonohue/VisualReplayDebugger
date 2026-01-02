@@ -30,7 +30,7 @@ namespace PathTree
             Node currentNode = Root;
             foreach (PathKeyType pathPart in path)
             {
-                Node node = currentNode.Children.FirstOrDefault(n => n.PathKey != null && n.PathKey.Equals(pathPart));
+                Node? node = currentNode.Children.FirstOrDefault(n => n.PathKey != null && n.PathKey.Equals(pathPart));
                 if (node == null)
                 {
                     node = new Node() { PathKey = pathPart };

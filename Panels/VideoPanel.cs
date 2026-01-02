@@ -27,6 +27,5 @@ class VideoPanel : DockPanelWithToolbar, IDisposable
     public void Dispose()
     {
         VideoControl?.Dispose();
-        VideoControl = null;
     }
 }

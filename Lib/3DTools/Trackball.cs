@@ -64,7 +64,7 @@ namespace _3DTools
     /// </summary> 
     public class Trackball
     {
-        private FrameworkElement _eventSource;
+        private FrameworkElement? _eventSource;
         private Point _previousPosition2D;
         private Vector3D _previousPosition3D = new Vector3D(0, 0, 1);
 
@@ -93,7 +93,7 @@ namespace _3DTools
         /// <summary>
         ///     The FrameworkElement we listen to for mouse events.
         /// </summary>
-        public FrameworkElement EventSource
+        public FrameworkElement? EventSource
         {
             get { return _eventSource; }
             
@@ -108,20 +108,26 @@ namespace _3DTools
 
                 _eventSource = value;
 
-                _eventSource.MouseDown += this.OnMouseDown;
-                _eventSource.MouseUp += this.OnMouseUp;
-                _eventSource.MouseMove += this.OnMouseMove;
+                if (_eventSource != null)
+                {
+                    _eventSource.MouseDown += this.OnMouseDown;
+                    _eventSource.MouseUp += this.OnMouseUp;
+                    _eventSource.MouseMove += this.OnMouseMove;
+                }
             }
         }
 
         private void OnMouseDown(object sender, MouseEventArgs e)
         {
-            Mouse.Capture(EventSource, CaptureMode.Element);
-            _previousPosition2D = e.GetPosition(EventSource);
-            _previousPosition3D = ProjectToTrackball(
-                EventSource.ActualWidth,
-                EventSource.ActualHeight,
-                _previousPosition2D);
+            if (EventSource != null)
+            {
+                Mouse.Capture(EventSource, CaptureMode.Element);
+                _previousPosition2D = e.GetPosition(EventSource);
+                _previousPosition3D = ProjectToTrackball(
+                    EventSource.ActualWidth,
+                    EventSource.ActualHeight,
+                    _previousPosition2D);
+            }
         }
 
         private void OnMouseUp(object sender, MouseEventArgs e)
@@ -150,6 +156,8 @@ namespace _3DTools
 
         private void Track(Point currentPosition)
         {
+            if (EventSource == null) return;
+
             Vector3D currentPosition3D = ProjectToTrackball(
                 EventSource.ActualWidth, EventSource.ActualHeight, currentPosition);
 

@@ -35,10 +35,10 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     private readonly Pen CursorPen = new(Brushes.Red, 1);
     private readonly Pen InterEntityPen = new(Brushes.Black, 1);
 
-    public ReplayCaptureReader replay;
+    public ReplayCaptureReader? replay;
     public ReplayCaptureReader Replay
     {
-        get => replay;
+        get => replay!;
         set
         {
             replay = value;
@@ -124,8 +124,9 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 
     private IEnumerable<DrawBlock> EnumerateAllBlocks()
     {
-        foreach (var channel in DrawChannels)
+        foreach (DrawChannel channel in DrawChannels)
         {
+            if (channel.drawBlocks == null) continue;
             foreach (var block in channel.drawBlocks)
             {
                 yield return block;
@@ -299,8 +300,8 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 
     class DrawChannel
     {
-        public Entity entity;
-        public string parameter;
+        public Entity? entity;
+        public string parameter = "";
         public List<DrawBlock>? drawBlocks;
         public Rect bounds;
         public Rect startBounds;
@@ -438,6 +439,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
             int channelForEntityCount = 0;
             foreach(var channel in channelGroup)
             {
+                if (channel.drawBlocks == null) continue;
                 foreach (DrawBlock block in channel.drawBlocks)
                 {
                     var baseColor = ColorProvider.GetLabelColor(block.FullValue);
@@ -477,13 +479,13 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
 
                 if (channelForEntityCount == 0)
                 {
-                    dc.DrawText(new FormattedText($"{channel.entity.Name}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), channel.bounds.TopLeft);
+                    dc.DrawText(new FormattedText($"{channel?.entity?.Name}", TextCultureInfo, FlowDirection.LeftToRight, TextTypeface, 9, Brushes.Black, 1.25), channel?.bounds.TopLeft ?? new());
                 }
 
                 // Line between entities
                 if (channelForEntityCount == 0 && groupNum > 0)
                 {
-                    dc.DrawLine(InterEntityPen, channel.bounds.TopLeft, channel.bounds.TopRight);
+                    dc.DrawLine(InterEntityPen, channel?.bounds.TopLeft ?? new(), channel?.bounds.TopRight ?? new());
                 }
 
                 ++channelForEntityCount;
@@ -523,9 +525,10 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
         if (DrawChannels.Any())
         {
-            foreach (var channel in DrawChannels)
+            foreach (DrawChannel channel in DrawChannels)
             {
-                if ( channel.bounds.Contains(pos) )
+                if ( channel.bounds.Contains(pos)
+                    && channel.drawBlocks != null)
                 {
                     foreach (var block in channel.drawBlocks)
                     {
@@ -545,7 +548,7 @@ class ReplayPropertiesTimelinesControl :  UserControl, IDisposable
     {
         if (BlockUnderMouse != null)
         {
-            string txt = $"{BlockUnderMouse.channel?.entity.Name}\n{BlockUnderMouse.channel?.parameter} : {(BlockUnderMouse.RawValue)}";
+            string txt = $"{BlockUnderMouse.channel?.entity?.Name}\n{BlockUnderMouse.channel?.parameter} : {(BlockUnderMouse.RawValue)}";
             SetTooltipText(txt);
         }
     }

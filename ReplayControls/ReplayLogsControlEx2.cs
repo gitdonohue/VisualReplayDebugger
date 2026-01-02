@@ -32,9 +32,9 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
 
     public SelectionGroup<string> LogCategoryFilter { get; } = new();
     public SelectionGroup<ReplayCapture.Color> LogColorFilter { get; } = new();
-    public ScrollViewer ScrollOwner { get; set; }
+    public ScrollViewer? ScrollOwner { get; set; }
 
-    ReplayCaptureReader replay;
+    ReplayCaptureReader replay = null!;
     public ReplayCaptureReader Replay
     {
         get => replay;
@@ -62,7 +62,7 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
 
     public record TextEntry
     {
-        public string Text;
+        public string Text = string.Empty;
         public int Index;
     }
 
@@ -196,8 +196,8 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
 
         var filter = new SearchContext(FilterText.Value);
         FilteredLogs = AllLogs.Where(x =>
-            (!ShowSelectedLogsOnly || SelectedEntities.Contains(x.entity))
-            && (!HiddenSelection.Contains(x.entity))
+            (!ShowSelectedLogsOnly || (x.entity != null && SelectedEntities.Contains(x.entity)))
+            && (x.entity != null && !HiddenSelection.Contains(x.entity))
             && (LogCategoryFilter.Empty || !LogCategoryFilter.Contains(x.category))
             && (LogColorFilter.Empty || !LogColorFilter.Contains(x.color))
             && (filter.Match(x.logHeader) || filter.Match(x.formattedLog)))
@@ -309,12 +309,12 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         if (lineYPos > (y_max - LineHeight))
         {
             // Scroll downwards
-            ScrollOwner.ScrollToVerticalOffset(lineYPos - ViewportHeight + LineHeight);
+            ScrollOwner?.ScrollToVerticalOffset(lineYPos - ViewportHeight + LineHeight);
         }
         else if (lineYPos < y_min)
         {
             // Scoll upwards
-            ScrollOwner.ScrollToVerticalOffset(lineYPos);
+            ScrollOwner?.ScrollToVerticalOffset(lineYPos);
         }
     }
 
@@ -412,17 +412,20 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
         int lineNum = (int)Math.Floor(mousePos / LineHeight);
         var logLine = ActiveLogs.Skip(lineNum).FirstOrDefault();
 
-        if (logLine.entity != null)
+        if (logLine != null) 
         {
-            EntitySelection.Set(logLine.entity);
-        }
+            if (logLine.entity != null)
+            {
+                EntitySelection.Set(logLine.entity);
+            }
 
-        if (logLine.frame != 0)
-        {
-            var t = Replay.GetTimeForFrame(logLine.frame+1);
-            IsJumpingToTime = true;
-            TimelineWindow.Timeline.Cursor = t;
-            IsJumpingToTime = false;
+            if (logLine.frame != 0)
+            {
+                var t = Replay.GetTimeForFrame(logLine.frame+1);
+                IsJumpingToTime = true;
+                TimelineWindow.Timeline.Cursor = t;
+                IsJumpingToTime = false;
+            }
         }
 
         e.Handled = true;
@@ -516,8 +519,8 @@ public class ReplayLogsControlEx2 : UserControl, IDisposable
                 logDrawPos.X += headerText.Width + 4;
 
                 // TODO: test if reusing these make a difference
-                bool isStarred = StarredSelection.Contains(line.entity);
-                var logText = new FormattedText(line.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, isStarred ? TextTypefaceBold : TextTypeface, LineHeight - TextMargin, line.color.ToBrush(), PIXELS_DPI);
+                bool isStarred = (line?.entity != null) ? StarredSelection.Contains(line.entity) : false;
+                var logText = new FormattedText(line?.formattedLog, TextCultureInfo, FlowDirection.LeftToRight, isStarred ? TextTypefaceBold : TextTypeface, LineHeight - TextMargin, line?.color.ToBrush(), PIXELS_DPI);
                 dc.DrawText(logText, logDrawPos);
             }
             if (drawpos.Y > (VerticalOffset + ViewportHeight))

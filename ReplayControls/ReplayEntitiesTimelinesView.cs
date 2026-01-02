@@ -27,7 +27,7 @@ namespace VisualReplayDebugger
 
         public int LabelWidth => 250;
 
-        private ReplayCaptureReader replay;
+        private ReplayCaptureReader replay = null!;
         public ReplayCaptureReader Replay 
         {
             get => replay;
@@ -38,7 +38,7 @@ namespace VisualReplayDebugger
             }
         }
 
-        public event Action DoubleClicked;
+        public event Action? DoubleClicked;
 
         public SelectionGroup<Entity> HiddenEntities { get; private set; }
         public SelectionGroup<Entity> StarredEntities { get; private set; }
@@ -107,7 +107,7 @@ namespace VisualReplayDebugger
                 var filter = new SearchContext(FilterText.Value);
                 foreach (var entityNode in replay.EntitiesGraph.EnumerateDepthFirst().Where(x=>x.Entity != null))
                 {
-                    var entity = entityNode.Entity;
+                    EntityEx entity = entityNode.Entity!;
                     //if (!ShowAllEntities && !entity.HasTransforms && !entity.HasParameters && !entity.HasNumericParameters && !entity.HasLogsPastFirstFrame & !entity.HasMesh) continue;
                     if (TimelineEntityCategoryFilter.Contains(entity.CategoryName)) continue;
                     if (!filter.Empty && !(filter.Match(entity.Name) || filter.Match(entity.Path)) ) continue;
@@ -117,8 +117,8 @@ namespace VisualReplayDebugger
             }
         }
 
-        double TimelineBarOffset => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel).TimelineOffset : 0;
-        double TimelineBarWidth => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel).TimelineWidth : ActualWidth;
+        double TimelineBarOffset => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel)?.TimelineOffset ?? 0 : 0;
+        double TimelineBarWidth => (this.Items.Count > 0) ? (this.Items[0] as EntityTimelineViewWithLabel)?.TimelineWidth ?? 0 : ActualWidth;
 
         public void OnChildMouseDown(object sender, MouseButtonEventArgs e)
         {
