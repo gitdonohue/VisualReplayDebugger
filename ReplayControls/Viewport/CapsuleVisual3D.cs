@@ -10,7 +10,7 @@ using Vector3D = System.Windows.Media.Media3D.Vector3D;
 
 namespace HelixToolkit.Wpf
 {
-    public class CapsuleVisual3D : SphereVisual3D
+    public class CapsuleVisual3D : MeshElement3D
     {
         public CapsuleVisual3D() : base()
         {
@@ -18,12 +18,38 @@ namespace HelixToolkit.Wpf
         }
 
         /// <summary>
+        /// Identifies the <see cref="Start"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty StartProperty = DependencyProperty.Register(
+            nameof(Start),
+            typeof(Point3D),
+            typeof(CapsuleVisual3D),
+            new PropertyMetadata(new Point3D(0, 0, 0), GeometryChanged));
+
+        /// <summary>
+        /// Gets or sets the center of the sphere.
+        /// </summary>
+        /// <value>The center.</value>
+        public Point3D Start
+        {
+            get
+            {
+                return (Point3D)this.GetValue(StartProperty);
+            }
+
+            set
+            {
+                this.SetValue(StartProperty, value);
+            }
+        }
+
+        /// <summary>
         /// Identifies the <see cref="End"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty EndProperty = DependencyProperty.Register(
-            "End",
+            nameof(End),
             typeof(Point3D),
-            typeof(SphereVisual3D),
+            typeof(CapsuleVisual3D),
             new PropertyMetadata(new Point3D(0, 0, 0), GeometryChanged));
 
         /// <summary>
@@ -43,18 +69,50 @@ namespace HelixToolkit.Wpf
             }
         }
 
-        public Point3D Start { get => Center; set => Center = value; }
+        /// <summary>
+        /// Identifies the <see cref="Radius"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty RadiusProperty = DependencyProperty.Register(
+            nameof(Radius),
+            typeof(double),
+            typeof(CapsuleVisual3D),
+            new PropertyMetadata(1.0, GeometryChanged));
 
-        public bool SimilarTo(Point3D p1, Point3D p2, double radius) => SimilarTo(p2-p1, radius);
-        public bool SimilarTo(Vector3D h, double radius) => (h - (End - Center)).Length < float.Epsilon;
+        /// <summary>
+        /// Gets or sets the radius of the capsule.
+        /// </summary>
+        /// <value>The radius.</value>
+        public double Radius
+        {
+            get
+            {
+                return (double)this.GetValue(RadiusProperty);
+            }
+
+            set
+            {
+                this.SetValue(RadiusProperty, value);
+            }
+        }
+
+        public bool SimilarTo(Point3D p1, Point3D p2, double radius)
+        {
+            if ( System.Math.Abs(radius - this.Radius) > float.Epsilon) return false;
+            if ( (p1-Start).Length > float.Epsilon) return false;
+            if ( (p2-End).Length > float.Epsilon) return false;
+            return true;
+        }
+
+        int ThetaDiv = 16;
+        int PhiDiv = 8;
 
         protected override System.Windows.Media.Media3D.MeshGeometry3D Tessellate()
         {
             // TODO: make an actual capsule (vs 2 spheres and a cylinder)
             var builder = new MeshBuilder(true, true);
-            builder.AddSphere(this.Center.ToVector3(), (float)this.Radius, this.ThetaDiv, this.PhiDiv);
-            builder.AddCylinder(this.Center.ToVector3(), this.End.ToVector3(), (float)this.Radius, this.ThetaDiv, cap1: false, cap2: false);
-            builder.AddSphere(this.End.ToVector3(), (float)this.Radius, this.ThetaDiv, this.PhiDiv);
+            builder.AddSphere(Start.ToVector3(), (float)Radius, ThetaDiv, PhiDiv);
+            builder.AddCylinder(Start.ToVector3(), End.ToVector3(), (float)Radius, ThetaDiv, cap1: false, cap2: false);
+            builder.AddSphere(End.ToVector3(), (float)Radius, ThetaDiv, PhiDiv);
             return builder.ToMesh().ConvertToWndMeshGeometry3D();
         }
     }

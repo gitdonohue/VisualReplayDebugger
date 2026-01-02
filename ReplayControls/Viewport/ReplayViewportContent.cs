@@ -324,18 +324,17 @@ public class ReplayViewportContent // TODO: Make IDisposable
     private void DrawCapsule(Point p1, Point p2, double radius, ReplayCapture.Color color) => DrawCapsule(p1.ToPoint(), p2.ToPoint(), radius, color);
     private void DrawCapsule(Point3D p1, Point3D p2, double radius, ReplayCapture.Color color)
     {
-        var capsule = availableCapsules.FirstOrDefault(x => x.SimilarTo(p2 - p1, radius));
+        var capsule = availableCapsules.FirstOrDefault(x => x.SimilarTo(p1, p2, radius));
         if (capsule != null)
         {
             availableCapsules.Remove(capsule);
         }
         else
         {
-            capsule = new CapsuleVisual3D() { Start = p1, End = p2, Radius = radius, PhiDiv = 10, ThetaDiv = 20 };
+            capsule = new CapsuleVisual3D() { Start = p1, End = p2, Radius = radius };
             Model3DGroup.Children.Add(capsule.Content);
             capsulesCache.Add(capsule);
         }
-        capsule.Model?.Transform = new TranslateTransform3D() { OffsetX = p1.X, OffsetY = p1.Y, OffsetZ = p1.Z };
         capsule.Material = MaterialsForColors[color];
         capsule.Visible = true;
     }
@@ -395,7 +394,7 @@ public class ReplayViewportContent // TODO: Make IDisposable
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Capsule)
                     {
-                        geom = new CapsuleVisual3D() { Start = creationDrawCommand.Pos.ToPoint(), End = creationDrawCommand.EndPoint.ToPoint(), Radius = creationDrawCommand.Radius, PhiDiv = 10, ThetaDiv = 20 };
+                        geom = new CapsuleVisual3D() { Start = creationDrawCommand.Pos.ToPoint(), End = creationDrawCommand.EndPoint.ToPoint(), Radius = creationDrawCommand.Radius };
                     }
                     else if (creationDrawCommand.type == EntityDrawCommandType.Mesh && creationDrawCommand.verts != null)
                     {
