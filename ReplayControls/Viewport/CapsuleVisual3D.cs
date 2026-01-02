@@ -95,14 +95,6 @@ namespace HelixToolkit.Wpf
             }
         }
 
-        public bool SimilarTo(Point3D p1, Point3D p2, double radius)
-        {
-            if ( System.Math.Abs(radius - this.Radius) > float.Epsilon) return false;
-            if ( (p1-Start).Length > float.Epsilon) return false;
-            if ( (p2-End).Length > float.Epsilon) return false;
-            return true;
-        }
-
         int ThetaDiv = 16;
         int PhiDiv = 8;
 

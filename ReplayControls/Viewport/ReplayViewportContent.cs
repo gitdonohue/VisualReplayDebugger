@@ -332,17 +332,24 @@ public class ReplayViewportContent // TODO: Make IDisposable
     private void DrawCapsule(Point p1, Point p2, double radius, ReplayCapture.Color color) => DrawCapsule(p1.ToPoint(), p2.ToPoint(), radius, color);
     private void DrawCapsule(Point3D p1, Point3D p2, double radius, ReplayCapture.Color color)
     {
-        var capsule = availableCapsules.FirstOrDefault(x => x.SimilarTo(p1, p2, radius));
+        var capsule = availableCapsules.FirstOrDefault(x =>
+        {
+            return Math.Abs(x.Radius - radius) < float.Epsilon
+                && ((p2 - p1) - (x.End - x.Start)).LengthSquared < float.Epsilon;
+        });
+        
         if (capsule != null)
         {
             availableCapsules.Remove(capsule);
         }
         else
         {
-            capsule = new CapsuleVisual3D() { Start = p1, End = p2, Radius = radius };
+            capsule = new CapsuleVisual3D() { Start = new(), End = (Point3D)(p2 - p1), Radius = radius };
             Model3DGroup.Children.Add(capsule.Content);
             capsulesCache.Add(capsule);
         }
+
+        capsule.Model?.Transform = new TranslateTransform3D() { OffsetX = p1.X, OffsetY = p1.Y, OffsetZ = p1.Z };
         capsule.Material = GetMaterialForColor(color);
         capsule.Visible = true;
     }
